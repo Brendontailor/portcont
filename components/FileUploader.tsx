@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import styles from './FileUploader.module.css';
 
 interface FileUploaderProps {
@@ -10,6 +11,7 @@ interface FileUploaderProps {
   acceptedTypes: string[];
   maxSizeMB: number;
   disabled?: boolean;
+  illustration?: string;
 }
 
 export default function FileUploader({
@@ -19,6 +21,7 @@ export default function FileUploader({
   acceptedTypes,
   maxSizeMB,
   disabled = false,
+  illustration,
 }: FileUploaderProps) {
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -137,6 +140,17 @@ export default function FileUploader({
           </div>
         ) : (
           <div className={styles.dropzoneContent}>
+            {illustration && (
+              <div className={styles.illustrationWrapper} aria-hidden="true">
+                <Image
+                  src={illustration}
+                  alt=""
+                  width={140}
+                  height={100}
+                  className={styles.illustration}
+                />
+              </div>
+            )}
             <div className={styles.dropzoneIcon}>📁</div>
             <p className={styles.dropzoneText}>Arraste o arquivo aqui ou clique para selecionar</p>
             <p className={styles.dropzoneHint}>

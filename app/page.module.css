@@ -17,32 +17,67 @@
 }
 
 .hero {
-  text-align: center;
-  padding: 48px 24px;
-  margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  align-items: center;
+  padding: 40px 24px;
+  margin-bottom: 24px;
+}
+
+.heroContent {
+  text-align: left;
+  max-width: 520px;
+}
+
+.heroImage {
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.heroImageEl {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .heroTitle {
-  font-size: 48px;
+  font-size: 42px;
   font-weight: 700;
   color: var(--color-text);
   letter-spacing: -1px;
   margin: 0 0 8px;
+  line-height: 1.1;
 }
 
 .heroSubtitle {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 400;
   color: var(--color-primary);
   margin: 0 0 16px;
 }
 
 .heroDescription {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--color-text-muted);
-  max-width: 600px;
-  margin: 0 auto;
+  max-width: 480px;
+  margin: 0;
   line-height: 1.6;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    padding: 48px 24px;
+    margin-bottom: 24px;
+  }
+
+  .heroImage {
+    display: flex;
+  }
 }
 
 .formSection {

@@ -100,6 +100,15 @@
   opacity: 0.4;
 }
 
+.emptyImage {
+  margin-bottom: 24px;
+}
+
+.emptyImageEl {
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+}
+
 .empty h2 {
   font-size: 18px;
   font-weight: 600;

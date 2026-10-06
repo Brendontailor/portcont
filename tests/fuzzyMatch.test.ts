@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 
 // Set required env vars before importing modules
 beforeAll(() => {
@@ -7,7 +7,7 @@ beforeAll(() => {
   process.env.MATCH_THRESHOLD = '95';
   process.env.REVIEW_THRESHOLD = '85';
   process.env.MAX_UPLOAD_MB = '15';
-  process.env.NODE_ENV = 'test';
+  vi.stubEnv('NODE_ENV', 'test');
 });
 
 import { calculateSimilarity } from '../backend/src/modules/matching/fuzzyMatch.service.js';

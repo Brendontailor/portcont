@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/Header';
 import { api } from '@/services/api';
 import type { Partner } from '@/types';
@@ -19,11 +20,7 @@ export default function PartnerDetailPage() {
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [newMonth, setNewMonth] = useState(new Date().getMonth() + 1);
 
-  useEffect(() => {
-    loadPartner();
-  }, [partnerId]);
-
-  const loadPartner = async () => {
+  const loadPartner = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -34,7 +31,11 @@ export default function PartnerDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [partnerId]);
+
+  useEffect(() => {
+    loadPartner();
+  }, [loadPartner]);
 
   const handleCreatePeriod = async () => {
     try {

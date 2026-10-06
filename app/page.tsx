@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import Header from '@/components/Header';
 import FileUploader from '@/components/FileUploader';
 import ComparisonSummary from '@/components/ComparisonSummary';
@@ -177,13 +178,25 @@ export default function HomePage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.container}>
-            <section className={styles.hero}>
-              <h1 className={styles.heroTitle}>PORTCONT</h1>
-              <p className={styles.heroSubtitle}>Comparação inteligente de clientes</p>
-              <p className={styles.heroDescription}>
-                Compare duas bases de clientes e encontre diferenças automaticamente,
-                mesmo quando os nomes possuem pequenas divergências de escrita.
-              </p>
+            <section className={styles.hero} aria-labelledby="hero-title">
+              <div className={styles.heroContent}>
+                <h1 id="hero-title" className={styles.heroTitle}>PORTCONT</h1>
+                <p className={styles.heroSubtitle}>Comparação inteligente de clientes</p>
+                <p className={styles.heroDescription}>
+                  Compare duas bases de clientes e encontre diferenças automaticamente,
+                  mesmo quando os nomes possuem pequenas divergências de escrita.
+                </p>
+              </div>
+              <div className={styles.heroImage} aria-hidden="true">
+                <Image
+                  src="/images/portcont/portcont-hero-comparacao.png"
+                  alt=""
+                  width={520}
+                  height={340}
+                  priority
+                  className={styles.heroImageEl}
+                />
+              </div>
             </section>
 
             <section className={styles.formSection} aria-labelledby="form-title">
@@ -256,6 +269,7 @@ export default function HomePage() {
                   acceptedTypes={ACCEPTED_TYPES}
                   maxSizeMB={MAX_SIZE_MB}
                   disabled={loading}
+                  illustration="/images/portcont/portcont-upload-arquivos.png"
                 />
                 <FileUploader
                   label="BASE B"
@@ -264,6 +278,7 @@ export default function HomePage() {
                   acceptedTypes={ACCEPTED_TYPES}
                   maxSizeMB={MAX_SIZE_MB}
                   disabled={loading}
+                  illustration="/images/portcont/portcont-upload-arquivos.png"
                 />
               </div>
 

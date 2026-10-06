@@ -80,6 +80,22 @@
   margin: 0;
 }
 
+.illustrationWrapper {
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.illustration {
+  object-fit: contain;
+}
+
+@media (max-width: 768px) {
+  .illustration {
+    width: 100px !important;
+    height: 70px !important;
+  }
+}
+
 .fileInfo {
   display: flex;
   align-items: center;

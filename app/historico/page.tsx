@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { api } from '@/services/api';
@@ -17,11 +18,7 @@ export default function HistoricoPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
 
-  useEffect(() => {
-    loadComparisons();
-  }, [page]);
-
-  const loadComparisons = async () => {
+  const loadComparisons = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -34,7 +31,11 @@ export default function HistoricoPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
+
+  useEffect(() => {
+    loadComparisons();
+  }, [loadComparisons]);
 
   return (
     <div className={styles.page}>
@@ -60,7 +61,15 @@ export default function HistoricoPage() {
             </div>
           ) : comparisons.length === 0 ? (
             <div className={styles.empty}>
-              <div className={styles.emptyIcon}>📋</div>
+              <div className={styles.emptyImage} aria-hidden="true">
+                <Image
+                  src="/images/portcont/portcont-historico-relatorios.png"
+                  alt=""
+                  width={280}
+                  height={200}
+                  className={styles.emptyImageEl}
+                />
+              </div>
               <h2>Nenhuma comparação encontrada</h2>
               <p>As comparações realizadas aparecerão aqui.</p>
               <Link href="/" className={styles.newBtn}>Nova Comparação</Link>

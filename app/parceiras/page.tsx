@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { api } from '@/services/api';
@@ -101,7 +102,15 @@ export default function ParceirasPage() {
 
           {partners.length === 0 ? (
             <div className={styles.empty}>
-              <div className={styles.emptyIcon}>🏢</div>
+              <div className={styles.emptyImage} aria-hidden="true">
+                <Image
+                  src="/images/portcont/portcont-parceiras-competencia.png"
+                  alt=""
+                  width={280}
+                  height={200}
+                  className={styles.emptyImageEl}
+                />
+              </div>
               <h2>Nenhuma parceira cadastrada</h2>
               <p>Crie a primeira parceira para começar a comparar bases.</p>
               <button className={styles.newBtn} onClick={() => setShowModal(true)}>
@@ -156,7 +165,7 @@ export default function ParceirasPage() {
                             className={styles.iconBtn}
                             onClick={() => handleDelete(partner.id)}
                             aria-label="Excluir"
-                            disabled={partner._count?.periods && partner._count.periods > 0}
+                            disabled={!!partner._count?.periods && partner._count.periods > 0}
                           >
                             🗑
                           </button>
