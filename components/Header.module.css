@@ -1,0 +1,79 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--header-height);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.logoText {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.logoSubtitle {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+.navList {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+}
+
+.navLink {
+  display: block;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: all var(--transition);
+}
+
+.navLink:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  text-decoration: none;
+}
+
+.navLink.active {
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .logoSubtitle {
+    display: none;
+  }
+}

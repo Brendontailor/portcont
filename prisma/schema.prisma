@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum MatchStatus {
+  MATCHED
+  ONLY_A
+  ONLY_B
+  REVIEW
+}
+
+enum FileSide {
+  A
+  B
+}
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  periods   PartnerPeriod[]
+
+  @@index([name])
+  @@index([active])
+}
+
+model PartnerPeriod {
+  id          String   @id @default(cuid())
+  partnerId   String
+  partner     Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  year        Int
+  month       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  comparisons Comparison[]
+
+  @@unique([partnerId, year, month])
+  @@index([partnerId])
+  @@index([year, month])
+}
+
+model Comparison {
+  id               String   @id @default(cuid())
+  title            String?
+  periodId         String
+  period           PartnerPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  fileAName        String
+  fileBName        String
+  totalA           Int      @default(0)
+  totalB           Int      @default(0)
+  matchedCount     Int      @default(0)
+  onlyACount       Int      @default(0)
+  onlyBCount       Int      @default(0)
+  reviewCount      Int      @default(0)
+  declaredA        Int?
+  declaredB        Int?
+  incompleteA      Boolean  @default(false)
+  incompleteB      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  entries          ComparisonEntry[]
+  sourceFiles      SourceFile[]
+  clients          ComparisonClient[]
+
+  @@index([periodId])
+  @@index([createdAt])
+}
+
+model SourceFile {
+  id               String      @id @default(cuid())
+  comparisonId     String
+  comparison       Comparison  @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  side             FileSide
+  originalName     String
+  storageKey       String?
+  storageUrl       String?
+  mimeType         String
+  size             Int
+  declaredRecords  Int?
+  extractedRecords Int?
+  createdAt        DateTime    @default(now())
+
+  @@index([comparisonId])
+}
+
+model ComparisonClient {
+  id              String      @id @default(cuid())
+  comparisonId    String
+  comparison      Comparison  @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  side            FileSide
+  originalName    String
+  normalizedName  String
+  occurrences     Int         @default(1)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([comparisonId])
+  @@index([normalizedName])
+  @@index([side])
+}
+
+model ComparisonEntry {
+  id             String         @id @default(cuid())
+  comparisonId   String
+  comparison     Comparison     @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  originalA      String?
+  normalizedA    String?
+  originalB      String?
+  normalizedB    String?
+  occurrencesA   Int?
+  occurrencesB   Int?
+  similarity     Float?
+  status         MatchStatus
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([comparisonId])
+  @@index([status])
+}
+
+model NameEquivalence {
+  id             String   @id @default(cuid())
+  originalA      String?
+  normalizedA    String
+  originalB      String?
+  normalizedB    String
+  isSame         Boolean
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([normalizedA])
+  @@index([normalizedB])
+}

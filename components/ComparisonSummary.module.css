@@ -1,0 +1,91 @@
+.container {
+  margin-bottom: 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: box-shadow var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.cardLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.cardSublabel {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardValue {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+
+.cardDeclared {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.incompleteBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  background-color: var(--color-warning-light);
+  color: var(--color-warning);
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.card.primary .cardValue { color: var(--color-primary); }
+.card.success .cardValue { color: var(--color-success); }
+.card.warning .cardValue { color: var(--color-warning); }
+.card.danger .cardValue { color: var(--color-danger); }
+.card.info .cardValue { color: var(--color-info); }
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cardValue {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

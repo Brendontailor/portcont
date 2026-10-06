@@ -1,0 +1,259 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  padding: 32px 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.hero {
+  text-align: center;
+  padding: 48px 24px;
+  margin-bottom: 32px;
+}
+
+.heroTitle {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -1px;
+  margin: 0 0 8px;
+}
+
+.heroSubtitle {
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--color-primary);
+  margin: 0 0 16px;
+}
+
+.heroDescription {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.formSection {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.formSelect,
+.formInput {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.formSelect:focus,
+.formInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.formSelect:disabled,
+.formInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.periodSelects {
+  display: flex;
+  gap: 12px;
+}
+
+.periodSelects .formSelect {
+  flex: 1;
+}
+
+.uploadGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.titleInput {
+  margin-bottom: 24px;
+}
+
+.compareBtn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.compareBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.resultHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.resultMeta {
+  flex: 1;
+  min-width: 280px;
+}
+
+.resultTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 4px;
+}
+
+.resultSubtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 4px;
+}
+
+.resultDate {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.resultActions {
+  display: flex;
+  gap: 12px;
+}
+
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  transition: background-color var(--transition);
+}
+
+.exportBtn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.matchedTable {
+  overflow-x: auto;
+}
+
+.reviewModal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modalOverlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .heroTitle {
+    font-size: 36px;
+  }
+
+  .heroSubtitle {
+    font-size: 18px;
+  }
+
+  .formSection {
+    padding: 24px 16px;
+  }
+
+  .uploadGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .resultHeader {
+    flex-direction: column;
+  }
+
+  .resultActions {
+    width: 100%;
+  }
+
+  .exportBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}
