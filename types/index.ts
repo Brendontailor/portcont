@@ -89,6 +89,7 @@ export interface Partner {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  _count?: { periods: number };
   periods: PartnerPeriod[];
 }
 
