@@ -5,3 +5,4 @@ process.env.MAX_UPLOAD_MB = process.env.MAX_UPLOAD_MB || '15';
 if (!process.env.NODE_ENV) {
   Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true, configurable: true });
 }
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-that-is-at-least-32-characters-long';

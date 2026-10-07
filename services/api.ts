@@ -1,7 +1,15 @@
-async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  const headers = new Headers(options.headers);
+
+  if (!isFormData && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const res = await fetch(path, {
     ...options,
+    headers,
+    credentials: 'include',
   });
 
   if (!res.ok) {
@@ -13,8 +21,32 @@ async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+async function fetchBlob(path: string): Promise<Blob> {
+  const res = await fetch(path, { credentials: 'include' });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Não foi possível gerar o arquivo' }));
+    throw new Error(error.error || `HTTP ${res.status}`);
+  }
+  return res.blob();
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+}
+
 export const api = {
   health: () => fetchApi<{ status: string; service: string }>('/api/health'),
+
+  auth: {
+    login: (username: string, password: string) =>
+      fetchApi<{ authenticated: true; user: AuthUser }>('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      }),
+    me: () => fetchApi<{ authenticated: true; user: AuthUser }>('/api/auth/me'),
+    logout: () => fetchApi<void>('/api/auth/logout', { method: 'POST' }),
+  },
 
   partners: {
     list: (activeOnly = true) => fetchApi<import('../types').Partner[]>(`/api/partners?active=${activeOnly}`),
@@ -46,7 +78,6 @@ export const api = {
       return fetchApi<{ comparison: import('../types').Comparison; warnings: string[] }>('/api/comparisons', {
         method: 'POST',
         body: formData,
-        headers: {},
       });
     },
     review: (comparisonId: string, entryId: string, samePerson: boolean) =>
@@ -60,10 +91,10 @@ export const api = {
 
   reports: {
     getComparison: (id: string) => fetchApi<{ comparison: import('../types').Comparison; clientsA: import('../types').ComparisonClient[]; clientsB: import('../types').ComparisonClient[] }>(`/api/reports/comparisons/${id}`),
-    exportComparisonXLSX: (id: string) => fetch(`/api/reports/comparisons/${id}/xlsx`).then(r => r.blob()),
-    getMonthly: (partnerId: string, year: number, month: number) => fetchApi<any>(`/api/reports/monthly/${partnerId}/${year}/${month}`),
-    exportMonthlyXLSX: (partnerId: string, year: number, month: number) => fetch(`/api/reports/monthly/${partnerId}/${year}/${month}/xlsx`).then(r => r.blob()),
-    getAnnual: (partnerId: string, year: number) => fetchApi<any>(`/api/reports/annual/${partnerId}/${year}`),
-    exportAnnualXLSX: (partnerId: string, year: number) => fetch(`/api/reports/annual/${partnerId}/${year}/xlsx`).then(r => r.blob()),
+    exportComparisonXLSX: (id: string) => fetchBlob(`/api/reports/comparisons/${id}/xlsx`),
+    getMonthly: (partnerId: string, year: number, month: number) => fetchApi<unknown>(`/api/reports/monthly/${partnerId}/${year}/${month}`),
+    exportMonthlyXLSX: (partnerId: string, year: number, month: number) => fetchBlob(`/api/reports/monthly/${partnerId}/${year}/${month}/xlsx`),
+    getAnnual: (partnerId: string, year: number) => fetchApi<unknown>(`/api/reports/annual/${partnerId}/${year}`),
+    exportAnnualXLSX: (partnerId: string, year: number) => fetchBlob(`/api/reports/annual/${partnerId}/${year}/xlsx`),
   },
 };

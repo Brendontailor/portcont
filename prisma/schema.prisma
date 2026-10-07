@@ -143,3 +143,13 @@ model NameEquivalence {
   @@index([normalizedA])
   @@index([normalizedB])
 }
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active])
+}

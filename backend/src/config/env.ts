@@ -10,6 +10,9 @@ const envSchema = z.object({
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().positive().default(900000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().positive().default(100),
+  JWT_SECRET: z.string().min(32).optional(),
+  ADMIN_USERNAME: z.string().min(1).max(100).optional(),
+  ADMIN_PASSWORD: z.string().min(8).max(200).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
