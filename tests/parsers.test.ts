@@ -129,6 +129,35 @@ HWTCAE7D9AB4
     expect(result.clients.map(client => client.normalizedName)).toEqual(['JOAO DA SILVA']);
   });
 
+  it('preserves customer names printed on the same line as the SmartOLT view link', () => {
+    const text = `
+1-3 ONUs de 3 exibidas
+Status Visualizar Nome SN / MAC
+
+(/onu/view/2319)
+Visualizar (/onu/view/2319) ROSANGELA BARBOSA
+DOS REIS
+HWTCAE7D9AB4
+
+(/onu/view/2300)
+Visualizar (/onu/view/2300) ARTUR COELHO
+RODRIGUES
+HWTC803CCFB3
+
+(/onu/view/66)
+Visualizar (/onu/view/66) eberson bierci ferraz FHTT04AB6CB8
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.map(client => client.normalizedName)).toEqual([
+      'ROSANGELA BARBOSA DOS REIS',
+      'ARTUR COELHO RODRIGUES',
+      'EBERSON BIERCI FERRAZ',
+    ]);
+    expect(result.extractedRecords).toBe(3);
+    expect(result.declaredRecords).toBe(3);
+    expect(result.possiblyIncomplete).toBe(false);
+  });
+
   it('should reject invalid PDF binary with friendly error', async () => {
     const buffer = Buffer.from('isto nao e um pdf valido');
     await expect(parsePDF(buffer, { fileName: 'test.pdf', mimeType: 'application/pdf' }))

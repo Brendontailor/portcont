@@ -15,6 +15,7 @@ export default function ParceirasPage() {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newPartnerName, setNewPartnerName] = useState('');
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
 
   useEffect(() => {
     loadPartners();
@@ -33,17 +34,40 @@ export default function ParceirasPage() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSavePartner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPartnerName.trim()) return;
     try {
-      await api.partners.create(newPartnerName.trim());
+      if (editingPartner) {
+        await api.partners.update(editingPartner.id, { name: newPartnerName.trim() });
+      } else {
+        await api.partners.create(newPartnerName.trim());
+      }
       setNewPartnerName('');
+      setEditingPartner(null);
       setShowModal(false);
       await loadPartners();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar parceira');
+      setError(err instanceof Error ? err.message : 'Erro ao salvar parceira');
     }
+  };
+
+  const openCreateModal = () => {
+    setEditingPartner(null);
+    setNewPartnerName('');
+    setShowModal(true);
+  };
+
+  const openRenameModal = (partner: Partner) => {
+    setEditingPartner(partner);
+    setNewPartnerName(partner.name);
+    setShowModal(true);
+  };
+
+  const closePartnerModal = () => {
+    setShowModal(false);
+    setEditingPartner(null);
+    setNewPartnerName('');
   };
 
   const handleToggleActive = async (partner: Partner) => {
@@ -88,7 +112,7 @@ export default function ParceirasPage() {
         <div className={styles.container}>
           <header className={styles.header}>
             <h1 className={styles.title}>Parceiras</h1>
-            <button className={styles.newBtn} onClick={() => setShowModal(true)}>
+            <button className={styles.newBtn} onClick={openCreateModal}>
               + Nova Parceira
             </button>
           </header>
@@ -113,7 +137,7 @@ export default function ParceirasPage() {
               </div>
               <h2>Nenhuma parceira cadastrada</h2>
               <p>Crie a primeira parceira para começar a comparar bases.</p>
-              <button className={styles.newBtn} onClick={() => setShowModal(true)}>
+              <button className={styles.newBtn} onClick={openCreateModal}>
                 + Criar Primeira Parceira
               </button>
             </div>
@@ -156,6 +180,14 @@ export default function ParceirasPage() {
                         <div className={styles.actions}>
                           <button
                             className={styles.iconBtn}
+                            onClick={() => openRenameModal(partner)}
+                            aria-label={`Renomear ${partner.name}`}
+                            title="Renomear parceira"
+                          >
+                            ✎
+                          </button>
+                          <button
+                            className={styles.iconBtn}
                             onClick={() => handleToggleActive(partner)}
                             aria-label={partner.active ? 'Desativar' : 'Ativar'}
                           >
@@ -179,10 +211,10 @@ export default function ParceirasPage() {
           )}
 
           {showModal && (
-            <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+            <div className={styles.modalOverlay} onClick={closePartnerModal}>
               <div className={styles.modal} onClick={e => e.stopPropagation()}>
-                <h2>Nova Parceira</h2>
-                <form onSubmit={handleCreate}>
+                <h2>{editingPartner ? 'Renomear Parceira' : 'Nova Parceira'}</h2>
+                <form onSubmit={handleSavePartner}>
                   <label htmlFor="partnerName" className={styles.formLabel}>
                     Nome da Parceira
                   </label>
@@ -198,11 +230,11 @@ export default function ParceirasPage() {
                     maxLength={100}
                   />
                   <div className={styles.modalActions}>
-                    <button type="button" className={styles.btnSecondary} onClick={() => setShowModal(false)}>
-                      Cancelar
-                    </button>
+                      <button type="button" className={styles.btnSecondary} onClick={closePartnerModal}>
+                        Cancelar
+                      </button>
                     <button type="submit" className={styles.btnPrimary}>
-                      Criar
+                      {editingPartner ? 'Salvar nome' : 'Criar'}
                     </button>
                   </div>
                 </form>

@@ -20,7 +20,6 @@ const TECHNICAL_PATTERNS = [
 ];
 
 const IGNORE_LINES = [
-  /^visualizar\s*\(/i,
   /^status$/i,
   /^status\s+visualizar\s+nome/i,
   /^sn\s*\/\s*mac$/i,
@@ -80,6 +79,11 @@ function extractDeclaredRecords(text: string): number | undefined {
 
 function cleanLine(line: string): string {
   let cleaned = line;
+  // SmartOLT's PDF text often puts the action label and ONU path directly
+  // before the customer's name. Remove only that UI fragment, preserving the
+  // actual name which follows it on the same line.
+  cleaned = cleaned.replace(/visualizar\s*\(\s*\/onu\/view\/\d+\s*\)/gi, ' ');
+  cleaned = cleaned.replace(/\(?\/onu\/view\/\d+\)?/gi, ' ');
   for (const pattern of TECHNICAL_PATTERNS) {
     cleaned = cleaned.replace(pattern, ' ');
   }
@@ -94,6 +98,7 @@ function cleanLine(line: string): string {
 function isLikelyName(text: string): boolean {
   const words = text.trim().split(/\s+/);
   if (words.length < 2) return false;
+  if (words.length === 2 && words.every(word => /^[\p{L}]$/u.test(word))) return false;
   if (words.length > 10) return false;
   const hasLetters = /[\p{L}]/u.test(text);
   const hasOnlyNumbers = /^[\d\s\-\.]+$/.test(text);
@@ -138,7 +143,31 @@ export function extractClientsFromPdfText(fullText: string): ParseResult {
     }
   };
 
-  for (const line of lines) {
+  for (const sourceLine of lines) {
+    const firstCodePoint = sourceLine.codePointAt(0) ?? 0;
+    const hasRowIcon = firstCodePoint >= 0xe000 && firstCodePoint <= 0xf8ff;
+    let iconPrefixLength = 0;
+    if (hasRowIcon) {
+      for (const char of sourceLine) {
+        const codePoint = char.codePointAt(0) ?? 0;
+        if ((codePoint >= 0xe000 && codePoint <= 0xf8ff) || /\s/u.test(char)) iconPrefixLength += char.length;
+        else break;
+      }
+    }
+    const line = hasRowIcon ? sourceLine.slice(iconPrefixLength) : sourceLine;
+    if (hasRowIcon) flushBuffer();
+    if (!line) continue;
+    // SmartOLT emits a connection/status glyph at the beginning of every ONU
+    // row. It is the most reliable row boundary for names wrapped around the
+    // view link in PDFs.
+    if (line.length <= 12 && !/[\p{L}\p{N}]/u.test(line)) {
+      flushBuffer();
+      continue;
+    }
+    // The visualizer action can be a standalone row between two lines of one
+    // wrapped customer name. Ignore the action-only line, but keep any name
+    // text extracted after its link when PDF text has merged the columns.
+    if (/^visualizar\s*\(/i.test(line) && !cleanLine(line)) continue;
     if (shouldIgnoreLine(line)) continue;
 
     if (isTechnicalIdentifier(line)) {
@@ -149,7 +178,8 @@ export function extractClientsFromPdfText(fullText: string): ParseResult {
     const cleaned = cleanLine(line);
     if (!cleaned) continue;
 
-    if (isLikelyName(cleaned)) {
+    const isSingleWordContinuation = nameBuffers.length > 0 && /^[\p{L}'-]+$/u.test(cleaned);
+    if (isLikelyName(cleaned) || isSingleWordContinuation) {
       nameBuffers.push(cleaned);
     } else {
       flushBuffer();
