@@ -148,7 +148,7 @@ export default function PartnerDetailPage() {
                     {partner.periods?.map(period => (
                       <tr key={period.id}>
                         <td>
-                          <Link href={`/parceiras/${partner.id}/${period.year}/${period.month}`} className={styles.periodLink}>
+                          <Link href={`/historico?periodId=${period.id}`} className={styles.periodLink}>
                             {getMonthName(period.month)} / {period.year}
                           </Link>
                         </td>
@@ -159,7 +159,7 @@ export default function PartnerDetailPage() {
                             : '—'}
                         </td>
                         <td>
-                          <Link href={`/parceiras/${partner.id}/${period.year}/${period.month}`} className={styles.actionBtn}>
+                          <Link href={`/historico?periodId=${period.id}`} className={styles.actionBtn}>
                             Abrir
                           </Link>
                         </td>

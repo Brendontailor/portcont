@@ -22,7 +22,8 @@ export default function HistoricoPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.comparisons.list(undefined, page, limit);
+      const periodId = new URLSearchParams(window.location.search).get('periodId') || undefined;
+      const data = await api.comparisons.list(periodId, page, limit);
       setComparisons(data.items);
       setTotal(data.total);
       setTotalPages(data.totalPages);
@@ -44,7 +45,7 @@ export default function HistoricoPage() {
         <div className={styles.container}>
           <header className={styles.header}>
             <h1 className={styles.title}>Histórico de Comparações</h1>
-            <p className={styles.subtitle}>{total} comparação{total !== 1 ? 'ões' : ''} encontrada{total !== 1 ? 's' : ''}</p>
+            <p className={styles.subtitle}>{total} {total === 1 ? 'comparação encontrada' : 'comparações encontradas'}</p>
           </header>
 
           {error && (
@@ -100,7 +101,7 @@ export default function HistoricoPage() {
                         <td>{formatDateTime(comp.createdAt)}</td>
                         <td>{comp.period.partner.name}</td>
                         <td>{comp.period.month.toString().padStart(2, '0')}/{comp.period.year}</td>
-                        <td>{comp.title || '—'}</td>
+                        <td><Link href={`/?comparison=${comp.id}`}>{comp.title || 'Abrir comparação'}</Link></td>
                         <td>{comp.fileAName}</td>
                         <td>{comp.fileBName}</td>
                         <td>{comp.totalA.toLocaleString('pt-BR')}</td>

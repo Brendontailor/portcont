@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import FileUploader from '@/components/FileUploader';
@@ -52,6 +52,8 @@ export default function HomePage() {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [selectedPeriod, setSelectedPeriod] = useState<{ year: number; month: number; id?: string } | null>(null);
   const [periods, setPeriods] = useState<Array<{ id: string; year: number; month: number }>>([]);
+  const periodRequest = useRef(0);
+  const [loadingPeriods, setLoadingPeriods] = useState(false);
   const [comparisonTitle, setComparisonTitle] = useState('');
   const [comparison, setComparison] = useState<Comparison | null>(null);
   const [activeTab, setActiveTab] = useState('baseA');
@@ -85,8 +87,11 @@ export default function HomePage() {
   }, []);
 
   const loadPeriods = useCallback(async (partnerId: string) => {
+    const request = ++periodRequest.current;
+    setLoadingPeriods(true);
     try {
       const data = await api.periods.list(partnerId);
+      if (request !== periodRequest.current) return;
       setPeriods(data);
       setSelectedPeriod(current => {
         if (current) {
@@ -100,7 +105,9 @@ export default function HomePage() {
           : { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
       });
     } catch {
-      setError('Erro ao carregar competências');
+      if (request === periodRequest.current) setError('Erro ao carregar competências');
+    } finally {
+      if (request === periodRequest.current) setLoadingPeriods(false);
     }
   }, []);
 
@@ -135,7 +142,7 @@ export default function HomePage() {
   };
 
   const handleCompare = async () => {
-    if (!fileA || !fileB || !selectedPartnerId || !selectedPeriod) {
+    if (loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod) {
       setError('Selecione a parceira, competência e ambos os arquivos');
       return;
     }
@@ -255,9 +262,11 @@ export default function HomePage() {
                     value={selectedPartnerId}
                     onChange={e => {
                       const id = e.target.value;
+                      ++periodRequest.current;
+                      setLoadingPeriods(Boolean(id));
                       setSelectedPartnerId(id);
                       setSelectedPeriod(null);
-                      loadPeriods(id);
+                      setPeriods([]);
                     }}
                     className={styles.formSelect}
                     disabled={loading}
@@ -340,7 +349,7 @@ export default function HomePage() {
               <button
                 className={`${styles.compareBtn} ${styles.btnPrimary}`}
                 onClick={handleCompare}
-                disabled={loading || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
+                disabled={loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
               >
                 {loading ? (
                   <>
@@ -369,6 +378,7 @@ export default function HomePage() {
       <Header />
       <main className={styles.main}>
         <div className={styles.container}>
+          {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
           {loading && (
             <LoadingSteps currentStep={loadingStep} />
           )}
@@ -389,6 +399,7 @@ export default function HomePage() {
               <p className={styles.resultDate}>Criado em {formatDateTime(comparison.createdAt)}</p>
             </div>
             <div className={styles.resultActions}>
+              <a href="/" className="btn btn-secondary">Nova comparação</a>
               <button className={styles.exportBtn} onClick={handleExportComparison}>
                 📊 Exportar Excel
               </button>
@@ -433,7 +444,7 @@ export default function HomePage() {
                   similarity={entry.similarity || 0}
                   onSame={() => handleReview(true, entry)}
                   onDifferent={() => handleReview(false, entry)}
-                  loading={reviewing && reviewEntry?.id === entry.id}
+                  loading={reviewing}
                 />
               ))}
               {getTabEntries('review').length === 0 && (

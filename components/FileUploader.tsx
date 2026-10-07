@@ -71,10 +71,11 @@ export default function FileUploader({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
+    if (disabled) return;
     if (e.dataTransfer.files.length > 0) {
       handleFileSelect(e.dataTransfer.files[0]);
     }
-  }, [handleFileSelect]);
+  }, [disabled, handleFileSelect]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -146,6 +147,7 @@ export default function FileUploader({
             <button
               type="button"
               className={styles.removeBtn}
+              disabled={disabled}
               onClick={(e) => { e.stopPropagation(); removeFile(); }}
               aria-label={`Remover ${file.name}`}
             >

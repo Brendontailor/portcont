@@ -24,6 +24,7 @@ const allowedOrigins = new Set([
   'http://localhost:3000',
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
 ].filter((value): value is string => Boolean(value)));
 
 app.use(cors({
