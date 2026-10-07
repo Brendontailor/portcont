@@ -188,13 +188,12 @@ export default function HomePage() {
                 <span className={styles.heroEyebrow}><span aria-hidden="true" /> CONFERÊNCIA DE CLIENTES</span>
                 <h1 id="hero-title">Compare suas listas com clareza.</h1>
                 <p>Encontre quem está nas duas relações e confira os clientes que aparecem só na sua lista ou só na lista da parceira.</p>
-                <div className={styles.heroNote}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg> Confira os arquivos antes de concluir a conferência.</div>
               </div>
               <div className={styles.heroArt} aria-hidden="true"><Image src="/images/portcont/portcont-conferencia.svg" alt="" fill priority sizes="(max-width: 800px) 100vw, 45vw" /></div>
             </section>
 
             <section className={styles.formSection} aria-labelledby="form-title">
-              <h2 id="form-title" className={styles.sectionTitle}>1. Prepare sua conferência</h2>
+              <h2 id="form-title" className={styles.sectionTitle}>Prepare sua conferência</h2>
 
               {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
               {warnings.map((w, i) => (
@@ -261,7 +260,8 @@ export default function HomePage() {
 
               <div className={styles.uploadGrid}>
                 <FileUploader
-                  label="NOSSA LISTA · BASE A"
+                  label="BASE A"
+                  context="Nossa lista"
                   side="A"
                   onFileSelect={(_, file) => setFileA(file)}
                   acceptedTypes={ACCEPTED_TYPES}
@@ -269,7 +269,8 @@ export default function HomePage() {
                   disabled={loading}
                 />
                 <FileUploader
-                  label="LISTA DA PARCEIRA · BASE B"
+                  label="BASE B"
+                  context="Lista da parceira"
                   side="B"
                   onFileSelect={(_, file) => setFileB(file)}
                   acceptedTypes={ACCEPTED_TYPES}
@@ -278,33 +279,35 @@ export default function HomePage() {
                 />
               </div>
 
-              <div className={styles.titleInput}>
-                <label htmlFor="title" className={styles.formLabel}>Título da comparação (opcional)</label>
-                <input
-                  id="title"
-                  type="text"
-                  value={comparisonTitle}
-                  onChange={e => setComparisonTitle(e.target.value)}
-                  placeholder="Ex: Comparação inicial, Revisão, Fechamento"
-                  className={styles.formInput}
-                  disabled={loading}
-                />
-              </div>
+              <div className={styles.titleActionRow}>
+                <div className={styles.titleInput}>
+                  <label htmlFor="title" className={styles.formLabel}>Título da comparação (opcional)</label>
+                  <input
+                    id="title"
+                    type="text"
+                    value={comparisonTitle}
+                    onChange={e => setComparisonTitle(e.target.value)}
+                    placeholder="Ex: Comparação inicial, Revisão, Fechamento"
+                    className={styles.formInput}
+                    disabled={loading}
+                  />
+                </div>
 
-              <button
-                className={`${styles.compareBtn} btn btn-primary`}
-                onClick={handleCompare}
-                disabled={loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
-              >
-                {loading ? (
-                  <>
-                    <span className="loading-spinner" />
-                    Processando...
-                  </>
-                ) : (
-                  'Comparar e abrir relatório'
-                )}
-              </button>
+                <button
+                  className={`${styles.compareBtn} btn btn-primary`}
+                  onClick={handleCompare}
+                  disabled={loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
+                >
+                  {loading ? (
+                    <>
+                      <span className="loading-spinner" />
+                      Processando...
+                    </>
+                  ) : (
+                    'Comparar e abrir relatório'
+                  )}
+                </button>
+              </div>
 
               {loading && <p role="status">Processando os arquivos e preparando a conferência. Aguarde…</p>}
             </section>

@@ -22,7 +22,6 @@ export default function ParceirasPage() {
   }, []);
 
   const loadPartners = async () => {
-    setLoading(true);
     setError(null);
     try {
       const data = await api.partners.list(false);
@@ -163,7 +162,7 @@ export default function ParceirasPage() {
                           {partner.name}
                         </Link>
                       </td>
-                      <td>{partner.slug}</td>
+                      <td className={styles.slug}>{partner.slug}</td>
                       <td>
                         <span className={`${styles.badge} ${partner.active ? styles.badgeActive : styles.badgeInactive}`}>
                           {partner.active ? 'Ativa' : 'Inativa'}
@@ -172,10 +171,10 @@ export default function ParceirasPage() {
                       <td>{partner._count?.periods || 0}</td>
                       <td>
                         {partner.periods?.[0]?.comparisons?.[0]
-                          ? formatDateTime(partner.periods[0].comparisons[0].createdAt)
+                          ? <span className={styles.date}>{formatDateTime(partner.periods[0].comparisons[0].createdAt)}</span>
                           : '—'}
                       </td>
-                      <td>{formatDateTime(partner.createdAt)}</td>
+                      <td><span className={styles.date}>{formatDateTime(partner.createdAt)}</span></td>
                       <td>
                         <div className={styles.actions}>
                           <button
@@ -189,7 +188,8 @@ export default function ParceirasPage() {
                           <button
                             className={styles.iconBtn}
                             onClick={() => handleToggleActive(partner)}
-                            aria-label={partner.active ? 'Desativar' : 'Ativar'}
+                            aria-label={partner.active ? 'Pausar parceira' : 'Ativar parceira'}
+                            title={partner.active ? 'Pausar parceira' : 'Ativar parceira'}
                           >
                             {partner.active ? '⏸' : '▶'}
                           </button>
@@ -197,6 +197,7 @@ export default function ParceirasPage() {
                             className={styles.iconBtn}
                             onClick={() => handleDelete(partner.id)}
                             aria-label="Excluir"
+                            title="Excluir parceira"
                             disabled={!!partner._count?.periods && partner._count.periods > 0}
                           >
                             🗑

@@ -20,8 +20,8 @@ export default function PartnerDetailPage() {
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [newMonth, setNewMonth] = useState(new Date().getMonth() + 1);
 
-  const loadPartner = useCallback(async () => {
-    setLoading(true);
+  const loadPartner = useCallback(async (showInitialLoading = false) => {
+    if (showInitialLoading) setLoading(true);
     setError(null);
     try {
       const data = await api.partners.get(partnerId);
@@ -34,7 +34,7 @@ export default function PartnerDetailPage() {
   }, [partnerId]);
 
   useEffect(() => {
-    loadPartner();
+    loadPartner(true);
   }, [loadPartner]);
 
   const handleCreatePeriod = async () => {
@@ -70,7 +70,7 @@ export default function PartnerDetailPage() {
         <main className={styles.main}>
           <div className={styles.container}>
             <div className={styles.error}>
-              <h2>Parceira não encontrada</h2>
+              <h2>{error || 'Parceira não encontrada'}</h2>
               <Link href="/parceiras" className={styles.backLink}>← Voltar</Link>
             </div>
           </div>

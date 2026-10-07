@@ -3,9 +3,7 @@
   display: grid;
   place-items: center;
   padding: 32px;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(44, 82, 130, 0.08), transparent 30%),
-    var(--color-bg);
+  background: var(--color-bg);
 }
 
 .shell {

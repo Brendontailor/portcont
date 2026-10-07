@@ -3,12 +3,12 @@
 }
 
 .main {
-  padding: 32px 0;
+  padding: 24px 0;
 }
 
 .container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -17,11 +17,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .title {
-  font-size: 28px;
+  font-size: 29px;
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
@@ -31,7 +31,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  height: 40px;
+  padding: 0 16px;
   background-color: var(--color-primary);
   color: white;
   border-radius: var(--radius-md);
@@ -125,31 +126,45 @@
 .tableWrapper {
   overflow-x: auto;
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border: 1px solid #dce4ed;
+  border-radius: 14px;
 }
 
-.table th,
-.table td {
-  padding: 12px 16px;
+.tableWrapper :global(.table) {
+  min-width: 1040px;
+  font-size: 13px;
+}
+
+.tableWrapper :global(.table) th,
+.tableWrapper :global(.table) td {
+  height: 52px;
+  padding: 8px 13px;
   text-align: left;
   border-bottom: 1px solid var(--color-border-light);
+  white-space: nowrap;
 }
 
-.table th {
+.tableWrapper :global(.table) th {
   font-weight: 600;
-  color: var(--color-text-muted);
-  font-size: 11px;
+  color: #566274;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background-color: var(--color-bg);
+  letter-spacing: 0.04em;
+  background-color: #f7f9fc;
+}
+
+.tableWrapper :global(.table) tbody tr:hover {
+  background-color: #f8fafc;
 }
 
 .partnerLink {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-primary);
   text-decoration: none;
 }
+
+.slug { color: var(--color-text-muted); font-size: 13px; }
+.date { color: #596579; font-size: 13px; }
 
 .partnerLink:hover {
   text-decoration: underline;
@@ -158,10 +173,11 @@
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  min-height: 24px;
+  padding: 3px 9px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .badgeActive {
@@ -183,8 +199,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-md);
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -195,9 +211,15 @@
 }
 
 .iconBtn:hover:not(:disabled) {
-  background-color: var(--color-primary-light);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background-color: #f1f5f9;
+  border-color: #b9c6d3;
+  color: var(--color-text);
+}
+
+.actions .iconBtn:last-child:hover:not(:disabled) {
+  background: #fff5f5;
+  border-color: #e6b8b8;
+  color: var(--color-danger);
 }
 
 .iconBtn:disabled {
@@ -305,4 +327,6 @@
   .title {
     font-size: 24px;
   }
+
+  .main { padding-top: 20px; }
 }

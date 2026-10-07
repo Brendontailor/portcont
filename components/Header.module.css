@@ -3,10 +3,8 @@
   top: 0;
   z-index: 100;
   min-height: var(--header-height);
-  background-color: rgba(255, 255, 255, 0.94);
-  border-bottom: 1px solid rgba(208, 220, 232, 0.8);
-  box-shadow: 0 8px 24px rgba(25, 55, 90, 0.06);
-  backdrop-filter: blur(8px);
+  background-color: #fff;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .container {
@@ -14,7 +12,7 @@
   align-items: center;
   justify-content: space-between;
   min-height: var(--header-height);
-  max-width: 1280px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 0 24px;
   gap: 24px;
@@ -36,7 +34,7 @@
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.5px;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .logoSubtitle {
@@ -44,6 +42,8 @@
   color: var(--color-text-muted);
   font-weight: 400;
   letter-spacing: 0.3px;
+  line-height: 1.25;
+  margin-top: 2px;
 }
 
 .rightArea {
@@ -64,7 +64,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 13px;
+  height: 36px;
+  padding: 0 11px;
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
@@ -90,8 +91,8 @@
 .account {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding-left: 16px;
+  gap: 8px;
+  padding: 4px 0 4px 12px;
   border-left: 1px solid var(--color-border-light);
 }
 
@@ -103,6 +104,9 @@
   color: var(--color-text-muted);
   font-size: 13px;
   font-weight: 600;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: #f4f6f8;
 }
 
 .logoutButton {
@@ -151,7 +155,7 @@
   }
 
   .navLink {
-    padding: 7px 9px;
+    padding: 0 9px;
     font-size: 13px;
   }
 
@@ -167,16 +171,30 @@
 }
 
 @media (max-width: 560px) {
+  .container { padding: 0 10px; gap: 6px; }
+
   .logoText {
-    font-size: 17px;
+    font-size: 16px;
   }
+
+  .navList { gap: 0; }
+
+  .navIcon { display: none; }
+
+  .rightArea { gap: 4px; }
 
   .navLink {
-    padding: 6px 7px;
-    font-size: 12px;
+    height: 32px;
+    gap: 0;
+    padding: 0 5px;
+    font-size: 11px;
   }
 
+  .account { gap: 4px; padding-left: 6px; }
+
   .logoutButton {
-    font-size: 12px;
+    gap: 4px;
+    padding: 5px 6px;
+    font-size: 11px;
   }
 }

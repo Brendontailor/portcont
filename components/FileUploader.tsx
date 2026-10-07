@@ -6,6 +6,7 @@ import styles from './FileUploader.module.css';
 
 interface FileUploaderProps {
   label: string;
+  context: string;
   side: 'A' | 'B';
   onFileSelect: (side: 'A' | 'B', file: File | null) => void;
   acceptedTypes: string[];
@@ -16,6 +17,7 @@ interface FileUploaderProps {
 
 export default function FileUploader({
   label,
+  context,
   side,
   onFileSelect,
   acceptedTypes,
@@ -102,7 +104,10 @@ export default function FileUploader({
 
   return (
     <div className={styles.wrapper}>
-      <label className={styles.label}>{label}</label>
+      <div className={styles.label}>
+        <strong className={`${styles.baseLabel} ${side === 'A' ? styles.baseA : styles.baseB}`}>{label}</strong>
+        <span>{context}</span>
+      </div>
 
       <div
         className={`${styles.dropzone} ${dragActive ? styles.active : ''} ${file ? styles.hasFile : ''}`}

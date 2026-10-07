@@ -3,12 +3,12 @@
 }
 
 .main {
-  padding: 32px 0;
+  padding: 24px 0;
 }
 
 .container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 0 24px;
 }

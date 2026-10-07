@@ -6,33 +6,49 @@
 }
 
 .label {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  min-height: 20px;
+}
+
+.baseLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .045em;
+}
+
+.baseA { color: var(--color-primary); }
+.baseB { color: #34745e; }
+
+.label span {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--color-text);
+  font-weight: 500;
+  color: var(--color-text-muted);
 }
 
 .dropzone {
   position: relative;
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 30px 24px;
+  display: grid;
+  place-items: center;
+  height: 156px;
+  border: 1px dashed #b8c6d5;
+  border-radius: 10px;
+  padding: 12px 18px;
   text-align: center;
-  transition: all var(--transition);
+  transition: border-color var(--transition), background-color var(--transition);
   cursor: pointer;
-  background: linear-gradient(145deg, #fff 15%, #f8fbff 100%);
-  box-shadow: 0 8px 20px rgba(25, 55, 90, 0.035);
+  background: #fff;
 }
 
 .dropzone:hover:not(.hasFile):not(.disabled) {
   border-color: var(--color-primary);
-  background-color: var(--color-primary-light);
-  box-shadow: 0 12px 26px rgba(44, 82, 130, 0.1);
-  transform: translateY(-2px);
+  background-color: #f5f9fd;
 }
 
 .dropzone.active {
   border-color: var(--color-primary);
-  background-color: var(--color-primary-light);
+  background-color: #f0f6fc;
 }
 
 .dropzone.hasFile {
@@ -55,35 +71,35 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 7px;
   pointer-events: none;
 }
 
 .dropzoneIcon {
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: var(--color-primary-light);
   color: var(--color-primary);
 }
 
 .dropzoneIcon svg {
-  width: 27px;
-  height: 27px;
+  width: 22px;
+  height: 22px;
 }
 
 .dropzoneText {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 550;
   color: var(--color-text);
   margin: 0;
 }
 
 .dropzoneHint {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: #667085;
   margin: 0;
 }
 
@@ -120,16 +136,12 @@
   width: 44px;
   height: 44px;
   flex: 0 0 auto;
-  border-radius: 12px;
+  border-radius: 9px;
   background: var(--color-success-light);
   color: var(--color-success);
 }
 
 .fileIcon svg { width: 23px; height: 23px; }
-
-.label {
-  letter-spacing: .02em;
-}
 
 .dropzone:focus-visible {
   outline: 3px solid var(--color-primary);
@@ -183,6 +195,7 @@
 
 @media (max-width: 768px) {
   .dropzone {
-    padding: 24px 16px;
+    height: 156px;
+    padding: 12px 16px;
   }
 }
