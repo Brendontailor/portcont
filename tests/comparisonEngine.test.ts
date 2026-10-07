@@ -10,7 +10,7 @@ describe('Conferência por nomes', () => {
     const result = await compareBases(clients('João da Silva', 'Ana Costa'), clients('JOAO DA SILVA', 'Pedro Santos'));
     expect(result.stats).toEqual({ totalA: 2, totalB: 2, matchedCount: 1, onlyACount: 1, onlyBCount: 1, reviewCount: 0 });
   });
-  it('considera pequenas diferenças sem listar os pares como ausentes', async () => {
+  it('mantém pares de nomes parecidos em revisão, fora das listas de exclusivos', async () => {
     const result = await compareBases(clients('Fernando Ferreira'), clients('Fernando Fereira'));
     expect(result.review).toHaveLength(1);
     expect(result.matched).toHaveLength(0);

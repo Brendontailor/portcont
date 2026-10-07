@@ -149,6 +149,10 @@ export function calculateSimilarity(a: NormalizedName, b: NormalizedName): numbe
   const { main: mainA } = getNameTokens(a.normalized);
   const { main: mainB } = getNameTokens(b.normalized);
 
+  // Do not match records with too little identifying information: an initial
+  // or a single common word is not enough to establish a person's identity.
+  if (mainA.length < 2 || mainB.length < 2) return 0;
+
   const jw = jaroWinkler(a.normalized, b.normalized) * 100;
   const lev = (1 - levenshteinDistance(a.normalized, b.normalized) / Math.max(a.normalized.length, b.normalized.length)) * 100;
   const wordSim = wordLevelSimilarity(mainA, mainB) * 100;
@@ -171,10 +175,6 @@ export function calculateSimilarity(a: NormalizedName, b: NormalizedName): numbe
   else if (conflicts === 1) score *= 0.8;
 
   const result = Math.max(0, Math.min(100, Math.round(score)));
-
-  if (Math.min(mainA.length, mainB.length) <= 1) {
-    return Math.min(result, 92);
-  }
 
   // Spelling similarity is not proof of identity. Keep differing name tokens
   // for review, even when a small typo produces a very high score.

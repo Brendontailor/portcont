@@ -194,6 +194,8 @@ export async function compareBases(
   const review: MatchCandidate[] = [];
   const matchedANames = new Set<string>();
   const matchedBNames = new Set<string>();
+  const reviewANames = new Set<string>();
+  const reviewBNames = new Set<string>();
 
   for (const candidate of resolved) {
     const classification = classifyMatch(candidate.similarity);
@@ -205,6 +207,8 @@ export async function compareBases(
       review.push(candidate);
       matchedANames.add(candidate.clientA.normalizedName);
       matchedBNames.add(candidate.clientB.normalizedName);
+      reviewANames.add(candidate.clientA.normalizedName);
+      reviewBNames.add(candidate.clientB.normalizedName);
     }
   }
 
