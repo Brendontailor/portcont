@@ -114,6 +114,20 @@ HWTC11111111
     expect(result.clients[0].normalizedName).toBe('JOAO SILVA');
   });
 
+  it('does not extract SmartOLT filters, toolbar text, or OLT labels as customers', () => {
+    const text = `
+Tipo ONU Qu…
+Tipo PON Qu…
+1 - OLTZTE...
+Mais filtrosImportar Exportar StatusVisualizarNomeSN MAC
+Status Visualizar Nome SN / MAC
+JOAO DA SILVA
+HWTCAE7D9AB4
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.map(client => client.normalizedName)).toEqual(['JOAO DA SILVA']);
+  });
+
   it('should reject invalid PDF binary with friendly error', async () => {
     const buffer = Buffer.from('isto nao e um pdf valido');
     await expect(parsePDF(buffer, { fileName: 'test.pdf', mimeType: 'application/pdf' }))

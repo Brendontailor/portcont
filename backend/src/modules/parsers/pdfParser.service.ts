@@ -31,16 +31,8 @@ const IGNORE_LINES = [
   /^página\s+\d+\s+de\s+\d+/i,
   /^configured\s+onus?$/i,
   /^onus\s+configurados$/i,
-  /^olt\s+/i,
-  /^placa\s+/i,
-  /^porta\s+/i,
-  /^zona\s+/i,
-  /^cto\s+/i,
-  /^vlan\s+/i,
-  /^tipo\s+onu\s+/i,
-  /^perfil\s+/i,
-  /^tipo\s+pon\s+/i,
-  /^setor\s+/i,
+  /^(?:\d+\s*[-–—]\s*)?olt[a-z0-9_-]*\b/i,
+  /^(?:placa|porta|zona|cto|vlan|tipo\s+onu|perfil|tipo\s+pon|setor)\b/i,
   /^smartolt$/i,
   /^smartolt\s+v/i,
   /^\d+-\d+\s+onus?\s+de\s+\d+\s+exibidas?$/i,
@@ -61,6 +53,8 @@ function isTechnicalIdentifier(text: string): boolean {
 
 function shouldIgnoreLine(text: string): boolean {
   const trimmed = text.trim().toLowerCase();
+  const compact = trimmed.replace(/[^\p{L}\p{N}]/gu, '');
+  if (compact.startsWith('maisfiltrosimportar') || compact.startsWith('statusvisualizarnomesnmac')) return true;
   return IGNORE_LINES.some(pattern => pattern.test(trimmed));
 }
 
@@ -90,6 +84,10 @@ function cleanLine(line: string): string {
     cleaned = cleaned.replace(pattern, ' ');
   }
   cleaned = cleaned.replace(/\b(?:HWTC|FHTT|ZTEG|ITBS|DD18|MONU|UBNT)[A-Z0-9]{6,}\b/gi, ' ');
+  // PDFs from SmartOLT can concatenate toolbar labels into one text line.
+  cleaned = cleaned.replace(/\b(?:mais\s*filtros|importar\s*\/\s*exportar|exportar|pesquisar|status|visualizar|nome|sn\s*\/\s*mac|sn\s+mac|tipo\s+onu|tipo\s+pon|perfil|setor|porta|placa|zona|cto|vlan)\b/gi, ' ');
+  cleaned = cleaned.replace(/\b\d+\s*[-–—]\s*olt[a-z0-9_-]*\b/gi, ' ');
+  cleaned = cleaned.replace(/\b(?:qu\.{2,}|qualquer)\b/gi, ' ');
   return normalizeWhitespace(cleaned.replace(/[^\p{L}\p{N}\s\-'.]/gu, '').trim());
 }
 
@@ -99,6 +97,9 @@ function isLikelyName(text: string): boolean {
   if (words.length > 10) return false;
   const hasLetters = /[\p{L}]/u.test(text);
   const hasOnlyNumbers = /^[\d\s\-\.]+$/.test(text);
+  const tokens = words.map(word => word.toLocaleLowerCase('pt-BR'));
+  const uiTokens = new Set(['tipo', 'onu', 'pon', 'perfil', 'qualquer', 'setor', 'porta', 'placa', 'zona', 'cto', 'vlan', 'olt', 'status', 'visualizar', 'nome', 'sn', 'mac', 'filtros', 'importar', 'exportar', 'pesquisar']);
+  if (tokens.some(token => uiTokens.has(token))) return false;
   return hasLetters && !hasOnlyNumbers && !isTechnicalIdentifier(text);
 }
 
