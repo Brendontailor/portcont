@@ -1,6 +1,7 @@
 import pdfParse from 'pdf-parse';
 import type { Buffer } from 'node:buffer';
 import type { ParseResult, ParsedClient, ParserOptions } from './parser.types.js';
+import { normalizeName } from '../matching/normalizeName.service.js';
 
 const TECHNICAL_PATTERNS = [
   /^HWTC[A-Z0-9]{8,}$/i,
@@ -81,96 +82,91 @@ function isLikelyName(text: string): boolean {
   return hasLetters && !hasOnlyNumbers && !isTechnicalIdentifier(text);
 }
 
-export async function parsePDF(buffer: Buffer, options: ParserOptions): Promise<ParseResult> {
-  const warnings: string[] = [];
-  let declaredRecords: number | undefined;
+function registerClient(clientsMap: Map<string, ParsedClient>, fullName: string) {
+  const cleaned = removePrefixes(normalizeWhitespace(fullName));
+  if (!isLikelyName(cleaned)) return;
+  const normalized = normalizeName(cleaned);
+  const existing = clientsMap.get(normalized);
+  if (existing) {
+    existing.occurrences++;
+  } else {
+    clientsMap.set(normalized, {
+      originalName: cleaned,
+      normalizedName: normalized,
+      occurrences: 1,
+    });
+  }
+}
 
+export function extractClientsFromPdfText(fullText: string): ParseResult {
+  const warnings: string[] = [];
+  const declaredRecords = extractDeclaredRecords(fullText);
+
+  const lines = fullText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  const nameBuffers: string[] = [];
+  const clientsMap = new Map<string, ParsedClient>();
+
+  const flushBuffer = () => {
+    if (nameBuffers.length > 0) {
+      registerClient(clientsMap, nameBuffers.join(' '));
+      nameBuffers.length = 0;
+    }
+  };
+
+  for (const line of lines) {
+    if (shouldIgnoreLine(line)) continue;
+
+    if (isTechnicalIdentifier(line)) {
+      flushBuffer();
+      continue;
+    }
+
+    const cleaned = cleanLine(line);
+    if (!cleaned) continue;
+
+    if (isLikelyName(cleaned)) {
+      nameBuffers.push(cleaned);
+    } else {
+      flushBuffer();
+    }
+  }
+  flushBuffer();
+
+  const clients = Array.from(clientsMap.values());
+  const extractedRecords = clients.length;
+  const possiblyIncomplete = declaredRecords !== undefined && extractedRecords < declaredRecords;
+
+  if (possiblyIncomplete) {
+    warnings.push(
+      `ATENÇÃO: este arquivo pode estar incompleto. O documento informa ${declaredRecords} registros, mas apenas ${extractedRecords} foram encontrados no arquivo enviado.`
+    );
+  }
+
+  if (clients.length === 0) {
+    warnings.push('Não foi possível identificar clientes neste arquivo.');
+  }
+
+  return {
+    clients,
+    declaredRecords,
+    extractedRecords,
+    possiblyIncomplete,
+    warnings,
+  };
+}
+
+export async function parsePDF(buffer: Buffer, _options: ParserOptions): Promise<ParseResult> {
   try {
     const data = await pdfParse(buffer);
-    const fullText = data.text;
-    declaredRecords = extractDeclaredRecords(fullText);
-
-    const lines = fullText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-
-    const nameBuffers: string[] = [];
-    const clientsMap = new Map<string, ParsedClient>();
-
-    for (const line of lines) {
-      if (shouldIgnoreLine(line)) continue;
-
-      if (isTechnicalIdentifier(line)) {
-        if (nameBuffers.length > 0) {
-          const fullName = nameBuffers.join(' ').trim();
-          const cleaned = removePrefixes(fullName);
-          if (isLikelyName(cleaned)) {
-            const normalized = cleaned.toUpperCase();
-            const existing = clientsMap.get(normalized);
-            if (existing) {
-              existing.occurrences++;
-            } else {
-              clientsMap.set(normalized, {
-                originalName: cleaned,
-                normalizedName: normalized,
-                occurrences: 1,
-              });
-            }
-          }
-          nameBuffers.length = 0;
-        }
-        continue;
-      }
-
-      const cleaned = cleanLine(line);
-      if (!cleaned) continue;
-
-      if (isLikelyName(cleaned)) {
-        nameBuffers.push(cleaned);
-      }
-    }
-
-    if (nameBuffers.length > 0) {
-      const fullName = nameBuffers.join(' ').trim();
-      const cleaned = removePrefixes(fullName);
-      if (isLikelyName(cleaned)) {
-        const normalized = cleaned.toUpperCase();
-        const existing = clientsMap.get(normalized);
-        if (existing) {
-          existing.occurrences++;
-        } else {
-          clientsMap.set(normalized, {
-            originalName: cleaned,
-            normalizedName: normalized,
-            occurrences: 1,
-          });
-        }
-      }
-    }
-
-    const clients = Array.from(clientsMap.values());
-    const extractedRecords = clients.length;
-    const possiblyIncomplete = declaredRecords !== undefined && extractedRecords < declaredRecords;
-
-    if (possiblyIncomplete) {
-      warnings.push(
-        `ATENÇÃO: este arquivo pode estar incompleto. O documento informa ${declaredRecords} registros, mas apenas ${extractedRecords} foram encontrados no arquivo enviado.`
-      );
-    }
-
-    if (clients.length === 0) {
-      warnings.push('Não foi possível identificar clientes neste arquivo.');
-    }
-
-    return {
-      clients,
-      declaredRecords,
-      extractedRecords,
-      possiblyIncomplete,
-      warnings,
-    };
+    return extractClientsFromPdfText(data.text);
   } catch (error) {
+    if (error instanceof Error && error.message.includes('Invalid PDF structure')) {
+      throw new Error('Não foi possível processar o arquivo. O PDF parece estar corrompido ou protegido.');
+    }
     throw new Error(`Erro ao processar PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }

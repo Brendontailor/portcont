@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
-import { createNormalizedName, normalizeName } from './normalizeName.service.js';
-import { calculateSimilarity, classifyMatch } from './fuzzyMatch.service.js';
+import { createNormalizedName, getNameTokens } from './normalizeName.service.js';
+import { calculateSimilarity, classifyMatch, hasCommonTokenSignal } from './fuzzyMatch.service.js';
 import { env } from '../../config/env.js';
 import type { ParsedClient, MatchCandidate, ComparisonResult, MatchStatus } from './matching.types.js';
 
@@ -17,6 +17,41 @@ function deduplicateClients(clients: ParsedClient[]): ParsedClient[] {
   return Array.from(map.values());
 }
 
+function buildTokenIndex(clients: ParsedClient[]): Map<string, Set<ParsedClient>> {
+  const index = new Map<string, Set<ParsedClient>>();
+  for (const client of clients) {
+    const { main } = getNameTokens(client.normalizedName);
+    const blocks = new Set<string>();
+    for (const token of main) {
+      blocks.add(token);
+      if (token.length >= 3) blocks.add(token.slice(0, 3));
+    }
+    for (const block of blocks) {
+      let set = index.get(block);
+      if (!set) {
+        set = new Set();
+        index.set(block, set);
+      }
+      set.add(client);
+    }
+  }
+  return index;
+}
+
+function getCandidateSet(client: ParsedClient, index: Map<string, Set<ParsedClient>>): Set<ParsedClient> {
+  const { main } = getNameTokens(client.normalizedName);
+  const candidates = new Set<ParsedClient>();
+  for (const token of main) {
+    const exact = index.get(token);
+    if (exact) for (const c of exact) candidates.add(c);
+    if (token.length >= 3) {
+      const block = index.get(token.slice(0, 3));
+      if (block) for (const c of block) candidates.add(c);
+    }
+  }
+  return candidates;
+}
+
 function createCandidates(
   clientsA: ParsedClient[],
   clientsB: ParsedClient[],
@@ -24,73 +59,68 @@ function createCandidates(
 ): MatchCandidate[] {
   const candidates: MatchCandidate[] = [];
 
-  const normalizedB = new Map<string, ParsedClient>();
+  const normalizedBCache = new Map<string, ParsedClient>();
   for (const client of clientsB) {
-    normalizedB.set(client.normalizedName, client);
+    normalizedBCache.set(client.normalizedName, client);
   }
 
-  const remainingA = [...clientsA];
-  const remainingB = new Map(normalizedB);
+  const remainingB = new Map(normalizedBCache);
+  const matchedAKeys = new Set<string>();
 
-  for (const clientA of remainingA) {
-    const exactMatch = remainingB.get(clientA.normalizedName);
-    if (exactMatch) {
-      candidates.push({
-        clientA,
-        clientB: exactMatch,
-        similarity: 100,
-      });
+  // 1. Matches exatos por normalizedName
+  for (const clientA of clientsA) {
+    const exact = remainingB.get(clientA.normalizedName);
+    if (exact) {
+      candidates.push({ clientA, clientB: exact, similarity: 100 });
       remainingB.delete(clientA.normalizedName);
+      matchedAKeys.add(clientA.normalizedName);
     }
   }
 
-  const unmatchedA = remainingA.filter(a => !candidates.some(c => c.clientA === a));
-
-  for (const clientA of unmatchedA) {
+  // 2. Equivalências manuais conhecidas
+  for (const clientA of clientsA) {
+    if (matchedAKeys.has(clientA.normalizedName)) continue;
     const equivMap = equivalences.get(clientA.normalizedName);
-    if (equivMap) {
-      for (const [normalizedBKey, isSame] of equivMap) {
-        if (isSame) {
-          const match = remainingB.get(normalizedBKey);
-          if (match) {
-            candidates.push({
-              clientA,
-              clientB: match,
-              similarity: 100,
-            });
-            remainingB.delete(normalizedBKey);
-            break;
-          }
-        }
+    if (!equivMap) continue;
+    for (const [normalizedBKey, isSame] of equivMap) {
+      if (!isSame) continue;
+      const match = remainingB.get(normalizedBKey);
+      if (match) {
+        candidates.push({ clientA, clientB: match, similarity: 100 });
+        remainingB.delete(normalizedBKey);
+        matchedAKeys.add(clientA.normalizedName);
+        break;
       }
     }
   }
 
-  const stillUnmatchedA = unmatchedA.filter(a => !candidates.some(c => c.clientA === a));
+  // 3. Fuzzy matching com pré-filtragem por blocos de tokens
+  const tokenIndex = buildTokenIndex([...remainingB.values()]);
+  const nameCache = new Map<string, ReturnType<typeof createNormalizedName>>();
 
-  for (const clientA of stillUnmatchedA) {
-    const normalizedA = createNormalizedName(clientA.originalName);
+  for (const clientA of clientsA) {
+    if (matchedAKeys.has(clientA.normalizedName)) continue;
 
-    for (const clientB of remainingB.values()) {
-      const normalizedB = createNormalizedName(clientB.originalName);
+    let normalizedA = nameCache.get(clientA.normalizedName);
+    if (!normalizedA) {
+      normalizedA = createNormalizedName(clientA.originalName);
+      nameCache.set(clientA.normalizedName, normalizedA);
+    }
 
-      if (
-        normalizedA.firstName && normalizedB.firstName &&
-        normalizedA.firstName !== normalizedB.firstName
-      ) {
-        continue;
+    const possibleB = getCandidateSet(clientA, tokenIndex);
+
+    for (const clientB of possibleB) {
+      if (!remainingB.has(clientB.normalizedName)) continue;
+
+      let normalizedB = nameCache.get(clientB.normalizedName);
+      if (!normalizedB) {
+        normalizedB = createNormalizedName(clientB.originalName);
+        nameCache.set(clientB.normalizedName, normalizedB);
       }
 
-      if (
-        normalizedA.lastName && normalizedB.lastName &&
-        normalizedA.lastName !== normalizedB.lastName
-      ) {
-        const sim = calculateSimilarity(normalizedA, normalizedB);
-        if (sim < 60) continue;
-      }
+      if (!hasCommonTokenSignal(normalizedA, normalizedB)) continue;
 
       const similarity = calculateSimilarity(normalizedA, normalizedB);
-
       if (similarity >= env.REVIEW_THRESHOLD) {
         candidates.push({ clientA, clientB, similarity });
       }

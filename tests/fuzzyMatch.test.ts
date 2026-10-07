@@ -1,15 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
-
-// Set required env vars before importing modules
-beforeAll(() => {
-  process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
-  process.env.DIRECT_URL = 'postgresql://test:test@localhost:5432/test';
-  process.env.MATCH_THRESHOLD = '95';
-  process.env.REVIEW_THRESHOLD = '85';
-  process.env.MAX_UPLOAD_MB = '15';
-  vi.stubEnv('NODE_ENV', 'test');
-});
-
+import { describe, it, expect } from 'vitest';
 import { calculateSimilarity } from '../backend/src/modules/matching/fuzzyMatch.service.js';
 import { createNormalizedName } from '../backend/src/modules/matching/normalizeName.service.js';
 

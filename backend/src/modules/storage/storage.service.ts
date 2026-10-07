@@ -5,14 +5,19 @@ export interface UploadResult {
   url: string;
 }
 
+export function isStorageConfigured(): boolean {
+  return Boolean(env.BLOB_READ_WRITE_TOKEN);
+}
+
 export async function uploadFile(
   buffer: Buffer,
   fileName: string,
   mimeType: string
-): Promise<UploadResult> {
+): Promise<UploadResult | null> {
   const token = env.BLOB_READ_WRITE_TOKEN;
   if (!token) {
-    throw new Error('BLOB_READ_WRITE_TOKEN not configured');
+    console.log(`[STORAGE] Blob não configurado. Arquivo "${fileName}" não será persistido (${buffer.length} bytes, ${mimeType}).`);
+    return null;
   }
 
   const timestamp = Date.now();
@@ -31,7 +36,8 @@ export async function uploadFile(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Failed to upload to Vercel Blob: ${error}`);
+    console.error(`[STORAGE] Falha no upload para Vercel Blob (status ${response.status}). Continuando sem persistência.`);
+    return null;
   }
 
   const data = await response.json() as { url: string };

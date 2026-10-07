@@ -1,6 +1,7 @@
 import { parse } from 'csv-parse/sync';
 import type { Buffer } from 'node:buffer';
 import type { ParseResult, ParsedClient, ParserOptions, ColumnCandidate } from './parser.types.js';
+import { normalizeName } from '../matching/normalizeName.service.js';
 
 const NAME_HEADER_KEYWORDS = [
   'nome',
@@ -94,17 +95,17 @@ function findNameColumn(headers: string[], rows: string[][]): ColumnCandidate | 
     const columnValues = rows.map(row => row[col] ? String(row[col]) : '').filter(v => v);
 
     const normalizedHeader = header.toLowerCase();
-    let confidence = 0;
+    let matchedKeyword = false;
 
     for (const keyword of NAME_HEADER_KEYWORDS) {
       if (normalizedHeader.includes(keyword)) {
-        confidence += 80;
+        matchedKeyword = true;
         break;
       }
     }
 
     const contentConfidence = calculateColumnConfidence(columnValues);
-    confidence += contentConfidence * 0.5;
+    const confidence = matchedKeyword ? 80 + contentConfidence * 0.5 : contentConfidence;
 
     const sampleValues = columnValues.slice(0, 5);
 
@@ -119,7 +120,7 @@ function findNameColumn(headers: string[], rows: string[][]): ColumnCandidate | 
   candidates.sort((a, b) => b.confidence - a.confidence);
 
   const best = candidates[0];
-  if (best && best.confidence > 40) {
+  if (best && best.confidence >= 40) {
     return best;
   }
 
@@ -178,7 +179,7 @@ export async function parseCSV(buffer: Buffer, options: ParserOptions): Promise<
       const cleaned = cleanCellValue(value);
       if (!cleaned || !isLikelyName(cleaned)) continue;
 
-      const normalized = cleaned.toUpperCase();
+      const normalized = normalizeName(cleaned);
       const existing = clientsMap.get(normalized);
       if (existing) {
         existing.occurrences++;

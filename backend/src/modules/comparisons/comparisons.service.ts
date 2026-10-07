@@ -13,12 +13,28 @@ export async function processComparison(
   fileA: Express.Multer.File,
   fileB: Express.Multer.File
 ) {
+  const period = await prisma.partnerPeriod.findUnique({
+    where: { id: periodId },
+    include: { partner: true },
+  });
+  if (!period) throw new AppError(404, 'Competência não encontrada');
+  if (!period.partner.active) throw new AppError(400, 'Parceira está inativa');
+
   const [parseResultA, parseResultB] = await Promise.all([
     parseFile(fileA.buffer, { fileName: fileA.originalname, mimeType: fileA.mimetype }),
     parseFile(fileB.buffer, { fileName: fileB.originalname, mimeType: fileB.mimetype }),
   ]);
 
   const allWarnings = [...parseResultA.warnings, ...parseResultB.warnings];
+
+  if (parseResultA.clients.length === 0 || parseResultB.clients.length === 0) {
+    if (parseResultA.clients.length === 0 && parseResultB.clients.length === 0) {
+      throw new AppError(400, 'Não foi possível identificar clientes nos dois arquivos enviados.');
+    }
+    throw new AppError(400, parseResultA.clients.length === 0
+      ? 'Não foi possível identificar clientes no arquivo A.'
+      : 'Não foi possível identificar clientes no arquivo B.');
+  }
 
   const [uploadA, uploadB] = await Promise.all([
     uploadFile(fileA.buffer, fileA.originalname, fileA.mimetype),
@@ -38,8 +54,8 @@ export async function processComparison(
     parseResultA.possiblyIncomplete,
     parseResultB.possiblyIncomplete,
     [
-      { side: 'A', originalName: fileA.originalname, storageKey: uploadA.key, storageUrl: uploadA.url, mimeType: fileA.mimetype, size: fileA.size, declaredRecords: parseResultA.declaredRecords, extractedRecords: parseResultA.extractedRecords },
-      { side: 'B', originalName: fileB.originalname, storageKey: uploadB.key, storageUrl: uploadB.url, mimeType: fileB.mimetype, size: fileB.size, declaredRecords: parseResultB.declaredRecords, extractedRecords: parseResultB.extractedRecords },
+      { side: 'A', originalName: fileA.originalname, storageKey: uploadA?.key, storageUrl: uploadA?.url, mimeType: fileA.mimetype, size: fileA.size, declaredRecords: parseResultA.declaredRecords, extractedRecords: parseResultA.extractedRecords },
+      { side: 'B', originalName: fileB.originalname, storageKey: uploadB?.key, storageUrl: uploadB?.url, mimeType: fileB.mimetype, size: fileB.size, declaredRecords: parseResultB.declaredRecords, extractedRecords: parseResultB.extractedRecords },
     ],
     parseResultA.clients,
     parseResultB.clients
@@ -53,35 +69,45 @@ export async function reviewEntry(comparisonId: string, entryId: string, samePer
   if (!entry) throw new AppError(404, 'Entrada não encontrada');
   if (entry.comparisonId !== comparisonId) throw new AppError(400, 'Entrada não pertence a esta comparação');
 
-  let newStatus: 'MATCHED' | 'ONLY_A' | 'ONLY_B' | 'REVIEW';
-  if (samePerson) {
-    newStatus = 'MATCHED';
-    if (entry.normalizedA && entry.normalizedB) {
-      await recordEquivalence(entry.normalizedA, entry.normalizedB, true, entry.originalA ?? undefined, entry.originalB ?? undefined);
-    }
-  } else {
-    newStatus = entry.originalA && entry.originalB ? 'REVIEW' : (entry.originalA ? 'ONLY_A' : 'ONLY_B');
-    if (entry.normalizedA && entry.normalizedB) {
-      await recordEquivalence(entry.normalizedA, entry.normalizedB, false, entry.originalA ?? undefined, entry.originalB ?? undefined);
-    }
+  const hasBothSides = Boolean(entry.originalA && entry.originalB);
+
+  if (entry.normalizedA && entry.normalizedB) {
+    await recordEquivalence(entry.normalizedA, entry.normalizedB, samePerson, entry.originalA ?? undefined, entry.originalB ?? undefined);
   }
 
-  await repo.updateEntryStatus(entryId, newStatus);
+  if (samePerson) {
+    await repo.updateEntryStatus(entryId, 'MATCHED');
+  } else if (hasBothSides) {
+    await prisma.comparisonEntry.update({
+      where: { id: entryId },
+      data: { status: 'ONLY_A', originalB: null, normalizedB: null, occurrencesB: null },
+    });
+    await prisma.comparisonEntry.create({
+      data: {
+        comparisonId,
+        originalB: entry.originalB,
+        normalizedB: entry.normalizedB,
+        occurrencesB: entry.occurrencesB,
+        status: 'ONLY_B',
+      },
+    });
+  } else if (entry.originalA) {
+    await repo.updateEntryStatus(entryId, 'ONLY_A');
+  } else {
+    await repo.updateEntryStatus(entryId, 'ONLY_B');
+  }
 
+  const entries = await prisma.comparisonEntry.findMany({ where: { comparisonId } });
   const comparison = await prisma.comparison.findUnique({ where: { id: comparisonId } });
   if (comparison) {
-    const entries = await prisma.comparisonEntry.findMany({ where: { comparisonId } });
-    const stats = {
-      totalA: comparison.totalA,
-      totalB: comparison.totalB,
-      matchedCount: entries.filter(e => e.status === 'MATCHED').length,
-      onlyACount: entries.filter(e => e.status === 'ONLY_A').length,
-      onlyBCount: entries.filter(e => e.status === 'ONLY_B').length,
-      reviewCount: entries.filter(e => e.status === 'REVIEW').length,
-    };
     await prisma.comparison.update({
       where: { id: comparisonId },
-      data: stats,
+      data: {
+        matchedCount: entries.filter(e => e.status === 'MATCHED').length,
+        onlyACount: entries.filter(e => e.status === 'ONLY_A').length,
+        onlyBCount: entries.filter(e => e.status === 'ONLY_B').length,
+        reviewCount: entries.filter(e => e.status === 'REVIEW').length,
+      },
     });
   }
 

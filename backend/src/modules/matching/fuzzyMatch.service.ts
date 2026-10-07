@@ -1,5 +1,6 @@
 import { env } from '../../config/env.js';
 import type { NormalizedName } from './matching.types.js';
+import { getNameTokens } from './normalizeName.service.js';
 
 function levenshteinDistance(a: string, b: string): number {
   if (a.length === 0) return b.length;
@@ -32,12 +33,11 @@ function jaroWinkler(a: string, b: string): number {
   if (a === b) return 1;
   if (a.length === 0 || b.length === 0) return 0;
 
-  const matchWindow = Math.floor(Math.max(a.length, b.length) / 2) - 1;
+  const matchWindow = Math.max(0, Math.floor(Math.max(a.length, b.length) / 2) - 1);
   const aMatches = new Array(a.length).fill(false);
   const bMatches = new Array(b.length).fill(false);
 
   let matches = 0;
-  let transpositions = 0;
 
   for (let i = 0; i < a.length; i++) {
     const start = Math.max(0, i - matchWindow);
@@ -56,6 +56,7 @@ function jaroWinkler(a: string, b: string): number {
   if (matches === 0) return 0;
 
   let k = 0;
+  let transpositions = 0;
   for (let i = 0; i < a.length; i++) {
     if (aMatches[i]) {
       while (!bMatches[k]) k++;
@@ -76,155 +77,123 @@ function jaroWinkler(a: string, b: string): number {
   return jaro + 0.1 * prefix * (1 - jaro);
 }
 
-function tokenSetSimilarity(tokensA: string[], tokensB: string[]): number {
-  const setA = new Set(tokensA);
-  const setB = new Set(tokensB);
-  const intersection = [...setA].filter(x => setB.has(x)).length;
-  const union = new Set([...tokensA, ...tokensB]).size;
+function fuzzyTokenSetSimilarity(mainA: string[], mainB: string[]): number {
+  const setB = new Set(mainB);
+  const usedB = new Set<string>();
+  let intersection = 0;
 
+  for (const t of mainA) {
+    if (setB.has(t)) {
+      intersection += 1;
+      usedB.add(t);
+      continue;
+    }
+    for (const b of mainB) {
+      if (usedB.has(b)) continue;
+      const s = jaroWinkler(t, b);
+      if (s >= 0.85) {
+        intersection += s;
+        usedB.add(b);
+        break;
+      }
+    }
+  }
+
+  const union = new Set([...mainA, ...mainB]).size;
   if (union === 0) return 0;
   return intersection / union;
 }
 
-function tokenOrderSimilarity(tokensA: string[], tokensB: string[]): number {
-  if (tokensA.length === 0 || tokensB.length === 0) return 0;
-
-  const minLen = Math.min(tokensA.length, tokensB.length);
-  let matches = 0;
-
-  for (let i = 0; i < minLen; i++) {
-    if (tokensA[i] === tokensB[i]) matches++;
+function bestTokenMatch(token: string, tokens: string[]): number {
+  let best = 0;
+  for (const t of tokens) {
+    const s = token === t ? 1 : jaroWinkler(token, t);
+    if (s > best) best = s;
+    if (best === 1) break;
   }
-
-  return matches / Math.max(tokensA.length, tokensB.length);
+  return best;
 }
 
-function firstNameSimilarity(nameA: NormalizedName, nameB: NormalizedName): number {
-  if (!nameA.firstName || !nameB.firstName) return 0;
-  return jaroWinkler(nameA.firstName, nameB.firstName);
-}
-
-function lastNameSimilarity(nameA: NormalizedName, nameB: NormalizedName): number {
-  if (!nameA.lastName || !nameB.lastName) return 0;
-  return jaroWinkler(nameA.lastName, nameB.lastName);
-}
-
-function mainTokenSimilarity(nameA: NormalizedName, nameB: NormalizedName): number {
-  const { main: mainA } = getNameTokens(nameA.normalized);
-  const { main: mainB } = getNameTokens(nameB.normalized);
-
-  if (mainA.length === 0 && mainB.length === 0) return 1;
+function wordLevelSimilarity(mainA: string[], mainB: string[]): number {
   if (mainA.length === 0 || mainB.length === 0) return 0;
-
-  return tokenSetSimilarity(mainA, mainB);
+  const sumA = mainA.reduce((acc, t) => acc + bestTokenMatch(t, mainB), 0) / mainA.length;
+  const sumB = mainB.reduce((acc, t) => acc + bestTokenMatch(t, mainA), 0) / mainB.length;
+  return (sumA + sumB) / 2;
 }
 
-function getNameTokens(normalized: string): { main: string[]; particles: string[] } {
-  const NAME_PARTICLES = new Set(['DA', 'DE', 'DO', 'DAS', 'DOS', 'E']);
-  const tokens = normalized.split(/\s+/).filter(t => t.length > 0);
-  const main: string[] = [];
-  const particles: string[] = [];
-
-  for (const token of tokens) {
-    if (NAME_PARTICLES.has(token)) {
-      particles.push(token);
-    } else {
-      main.push(token);
-    }
+function positionalSimilarity(mainA: string[], mainB: string[]): number {
+  const len = Math.max(mainA.length, mainB.length);
+  if (len === 0) return 1;
+  let matches = 0;
+  const minLen = Math.min(mainA.length, mainB.length);
+  for (let i = 0; i < minLen; i++) {
+    if (mainA[i] === mainB[i] || jaroWinkler(mainA[i], mainB[i]) >= 0.92) matches++;
   }
-
-  return { main, particles };
+  return matches / len;
 }
 
-function nameLengthPenalty(nameA: NormalizedName, nameB: NormalizedName): number {
-  const lenA = nameA.normalized.length;
-  const lenB = nameB.normalized.length;
-  const ratio = Math.min(lenA, lenB) / Math.max(lenA, lenB);
-  return ratio;
-}
-
-function wordCountPenalty(nameA: NormalizedName, nameB: NormalizedName): number {
-  const countA = nameA.tokens.length;
-  const countB = nameB.tokens.length;
-  const diff = Math.abs(countA - countB);
-  if (diff === 0) return 1;
-  if (diff === 1) return 0.9;
-  if (diff === 2) return 0.75;
-  return 0.5;
-}
-
-function conflictingTokensPenalty(nameA: NormalizedName, nameB: NormalizedName): number {
-  const { main: mainA } = getNameTokens(nameA.normalized);
-  const { main: mainB } = getNameTokens(nameB.normalized);
-
-  if (mainA.length === 0 || mainB.length === 0) return 1;
-
-  const setA = new Set(mainA);
+function countConflictingTokens(mainA: string[], mainB: string[]): number {
   const setB = new Set(mainB);
-
   let conflicts = 0;
-  for (const token of setA) {
-    if (!setB.has(token)) {
-      const similar = [...setB].some(t => jaroWinkler(token, t) > 0.85);
-      if (!similar) conflicts++;
+  for (const t of mainA) {
+    if (setB.has(t)) continue;
+    const hasSimilar = mainB.some(b => jaroWinkler(t, b) >= 0.85);
+    if (!hasSimilar) conflicts++;
+  }
+  return conflicts;
+}
+
+export function calculateSimilarity(a: NormalizedName, b: NormalizedName): number {
+  if (a.normalized === b.normalized) return 100;
+
+  const { main: mainA } = getNameTokens(a.normalized);
+  const { main: mainB } = getNameTokens(b.normalized);
+
+  const jw = jaroWinkler(a.normalized, b.normalized) * 100;
+  const lev = (1 - levenshteinDistance(a.normalized, b.normalized) / Math.max(a.normalized.length, b.normalized.length)) * 100;
+  const wordSim = wordLevelSimilarity(mainA, mainB) * 100;
+  const tokenSet = fuzzyTokenSetSimilarity(mainA, mainB) * 100;
+  const order = positionalSimilarity(mainA, mainB) * 100;
+  const first = a.firstName && b.firstName ? jaroWinkler(a.firstName, b.firstName) * 100 : 0;
+  const last = a.lastName && b.lastName ? jaroWinkler(a.lastName, b.lastName) * 100 : 0;
+
+  let score =
+    wordSim * 0.30 +
+    tokenSet * 0.20 +
+    order * 0.05 +
+    first * 0.15 +
+    last * 0.10 +
+    jw * 0.10 +
+    lev * 0.10;
+
+  const conflicts = countConflictingTokens(mainA, mainB) + countConflictingTokens(mainB, mainA);
+  if (conflicts >= 2) score *= 0.5;
+  else if (conflicts === 1) score *= 0.8;
+
+  const result = Math.max(0, Math.min(100, Math.round(score)));
+
+  if (Math.min(mainA.length, mainB.length) <= 1) {
+    return Math.min(result, 92);
+  }
+
+  return result;
+}
+
+export function hasCommonTokenSignal(a: NormalizedName, b: NormalizedName): boolean {
+  const { main: mainA } = getNameTokens(a.normalized);
+  const { main: mainB } = getNameTokens(b.normalized);
+
+  if (mainA.length === 0 || mainB.length === 0) return false;
+
+  for (const t of mainA) {
+    if (mainB.includes(t)) return true;
+  }
+  for (const t of mainA) {
+    for (const u of mainB) {
+      if (jaroWinkler(t, u) >= 0.85) return true;
     }
   }
-
-  if (conflicts >= 2) return 0.5;
-  if (conflicts === 1) return 0.8;
-  return 1;
-}
-
-function shortNamePenalty(nameA: NormalizedName, nameB: NormalizedName): number {
-  const minTokens = Math.min(nameA.tokens.length, nameB.tokens.length);
-  if (minTokens <= 2) return 0.85;
-  return 1;
-}
-
-export function calculateSimilarity(
-  normalizedA: NormalizedName,
-  normalizedB: NormalizedName
-): number {
-  const exactMatch = normalizedA.normalized === normalizedB.normalized;
-  if (exactMatch) return 100;
-
-  const jaro = jaroWinkler(normalizedA.normalized, normalizedB.normalized) * 100;
-  const levenshtein = (1 - levenshteinDistance(normalizedA.normalized, normalizedB.normalized) / Math.max(normalizedA.normalized.length, normalizedB.normalized.length)) * 100;
-  const tokenSet = tokenSetSimilarity(normalizedA.tokens, normalizedB.tokens) * 100;
-  const tokenOrder = tokenOrderSimilarity(normalizedA.tokens, normalizedB.tokens) * 100;
-  const firstNameSim = firstNameSimilarity(normalizedA, normalizedB) * 100;
-  const lastNameSim = lastNameSimilarity(normalizedA, normalizedB) * 100;
-  const mainTokenSim = mainTokenSimilarity(normalizedA, normalizedB) * 100;
-
-  let score = 0;
-  score += jaro * 0.20;
-  score += levenshtein * 0.15;
-  score += tokenSet * 0.20;
-  score += tokenOrder * 0.10;
-  score += firstNameSim * 0.15;
-  score += lastNameSim * 0.10;
-  score += mainTokenSim * 0.10;
-
-  const lengthPenalty = nameLengthPenalty(normalizedA, normalizedB);
-  const wordPenalty = wordCountPenalty(normalizedA, normalizedB);
-  const conflictPenalty = conflictingTokensPenalty(normalizedA, normalizedB);
-  const shortPenalty = shortNamePenalty(normalizedA, normalizedB);
-
-  score *= lengthPenalty * wordPenalty * conflictPenalty * shortPenalty;
-
-  if (normalizedA.firstName !== normalizedB.firstName && normalizedA.firstName && normalizedB.firstName) {
-    score *= 0.6;
-  }
-
-  if (normalizedA.lastName !== normalizedB.lastName && normalizedA.lastName && normalizedB.lastName) {
-    score *= 0.7;
-  }
-
-  if (normalizedA.tokens.length <= 2 || normalizedB.tokens.length <= 2) {
-    score *= 0.9;
-  }
-
-  return Math.max(0, Math.min(100, Math.round(score)));
+  return false;
 }
 
 export function classifyMatch(score: number): 'MATCHED' | 'REVIEW' | 'DIFFERENT' {

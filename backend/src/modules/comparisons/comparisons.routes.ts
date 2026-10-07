@@ -6,11 +6,15 @@ import { AppError } from '../../middlewares/error.middleware.js';
 
 const router = Router();
 
+router.get('/supported-formats', (_req, res) => {
+  res.json({ mimeTypes: service.getSupportedMimeTypesList() });
+});
+
 router.get('/', async (req, res, next) => {
   try {
     const periodId = req.query.periodId as string | undefined;
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     const result = await service.listComparisons(periodId, page, limit);
     res.json(result);
   } catch (err) { next(err); }
@@ -25,8 +29,8 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', uploadComparison, async (req, res, next) => {
   try {
-    const files = req.files as { fileA?: Express.Multer.File[]; fileB?: Express.Multer.File[] };
-    if (!files.fileA?.[0] || !files.fileB?.[0]) {
+    const files = req.files as { fileA?: Express.Multer.File[]; fileB?: Express.Multer.File[] } | undefined;
+    if (!files?.fileA?.[0] || !files?.fileB?.[0]) {
       throw new AppError(400, 'É necessário enviar exatamente 2 arquivos (fileA e fileB)');
     }
 
@@ -34,12 +38,12 @@ router.post('/', uploadComparison, async (req, res, next) => {
     const title = req.body.title;
 
     if (!periodId) {
-      throw new AppError(400, 'periodId é obrigatório');
+      throw new AppError(400, 'Selecione a parceira e a competência antes de comparar');
     }
 
     const { comparison, warnings } = await service.processComparison(
       periodId,
-      title,
+      typeof title === 'string' && title.trim() ? title.trim() : undefined,
       files.fileA[0],
       files.fileB[0]
     );
@@ -61,10 +65,6 @@ router.delete('/:id', async (req, res, next) => {
     await service.deleteComparison(req.params.id);
     res.status(204).send();
   } catch (err) { next(err); }
-});
-
-router.get('/supported-formats', (_req, res) => {
-  res.json({ mimeTypes: service.getSupportedMimeTypesList() });
 });
 
 export default router;
