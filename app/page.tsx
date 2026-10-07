@@ -12,7 +12,7 @@ import LoadingSteps from '@/components/LoadingSteps';
 import WarningBanner from '@/components/WarningBanner';
 import EmptyState from '@/components/EmptyState';
 import { api } from '@/services/api';
-import type { Comparison, ComparisonEntry, ParsedClient } from '@/types';
+import type { Comparison, ComparisonEntry } from '@/types';
 import { formatDateTime, downloadBlob } from '@/utils/helpers';
 import styles from './page.module.css';
 
@@ -50,7 +50,7 @@ export default function HomePage() {
   const [fileB, setFileB] = useState<File | null>(null);
   const [partners, setPartners] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
-  const [selectedPeriod, setSelectedPeriod] = useState<{ year: number; month: number; id: string } | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<{ year: number; month: number; id?: string } | null>(null);
   const [periods, setPeriods] = useState<Array<{ id: string; year: number; month: number }>>([]);
   const [comparisonTitle, setComparisonTitle] = useState('');
   const [comparison, setComparison] = useState<Comparison | null>(null);
@@ -59,32 +59,50 @@ export default function HomePage() {
   const [loadingStep, setLoadingStep] = useState(1);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [reviewEntry, setReviewEntry] = useState<ComparisonEntry | null>(null);
+  const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadPartners = useCallback(async () => {
     try {
       const data = await api.partners.list(true);
       setPartners(data);
-      if (data.length > 0 && !selectedPartnerId) {
-        setSelectedPartnerId(data[0].id);
+      const params = new URLSearchParams(window.location.search);
+      const requestedPartner = params.get('partner');
+      const year = Number(params.get('year'));
+      const month = Number(params.get('month'));
+
+      if (Number.isInteger(year) && Number.isInteger(month) && month >= 1 && month <= 12) {
+        setSelectedPeriod({ year, month });
       }
+
+      setSelectedPartnerId(current => {
+        if (current) return current;
+        return data.some(item => item.id === requestedPartner) ? requestedPartner! : data[0]?.id || '';
+      });
     } catch {
       setError('Erro ao carregar parceiras');
     }
-  }, [selectedPartnerId]);
+  }, []);
 
   const loadPeriods = useCallback(async (partnerId: string) => {
     try {
       const data = await api.periods.list(partnerId);
       setPeriods(data);
-      if (data.length > 0 && !selectedPeriod) {
+      setSelectedPeriod(current => {
+        if (current) {
+          const existing = data.find(item => item.year === current.year && item.month === current.month);
+          return { ...current, id: existing?.id };
+        }
+
         const latest = data[0];
-        setSelectedPeriod({ year: latest.year, month: latest.month, id: latest.id });
-      }
+        return latest
+          ? { year: latest.year, month: latest.month, id: latest.id }
+          : { year: new Date().getFullYear(), month: new Date().getMonth() + 1 };
+      });
     } catch {
       setError('Erro ao carregar competências');
     }
-  }, [selectedPeriod]);
+  }, []);
 
   useEffect(() => {
     loadPartners();
@@ -95,6 +113,26 @@ export default function HomePage() {
       loadPeriods(selectedPartnerId);
     }
   }, [selectedPartnerId, loadPeriods]);
+
+  useEffect(() => {
+    const comparisonId = new URLSearchParams(window.location.search).get('comparison');
+    if (!comparisonId) return;
+
+    setLoading(true);
+    api.comparisons.get(comparisonId)
+      .then(setComparison)
+      .catch(err => setError(err instanceof Error ? err.message : 'Erro ao carregar comparação'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const updatePeriod = (values: { year?: number; month?: number }) => {
+    setSelectedPeriod(current => {
+      const year = values.year ?? current?.year ?? new Date().getFullYear();
+      const month = values.month ?? current?.month ?? new Date().getMonth() + 1;
+      const existing = periods.find(item => item.year === year && item.month === month);
+      return { year, month, id: existing?.id };
+    });
+  };
 
   const handleCompare = async () => {
     if (!fileA || !fileB || !selectedPartnerId || !selectedPeriod) {
@@ -110,22 +148,22 @@ export default function HomePage() {
     setActiveTab('baseA');
 
     try {
-      setLoadingStep(2);
-      setLoadingStep(3);
-      setLoadingStep(4);
+      const periodId = selectedPeriod.id
+        ?? (await api.periods.create(selectedPartnerId, selectedPeriod.year, selectedPeriod.month)).id;
+
       setLoadingStep(5);
-      setLoadingStep(6);
 
       const result = await api.comparisons.create(
-        selectedPeriod.id,
+        periodId,
         comparisonTitle || undefined,
         fileA,
         fileB
       );
 
       setWarnings(result.warnings);
-      const comp = await api.comparisons.get(result.comparison.id);
-      setComparison(comp);
+      setLoadingStep(6);
+      setComparison(result.comparison);
+      window.history.replaceState(null, '', `/?comparison=${result.comparison.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao processar comparação');
     } finally {
@@ -133,14 +171,18 @@ export default function HomePage() {
     }
   };
 
-  const handleReview = async (samePerson: boolean) => {
-    if (!reviewEntry || !comparison) return;
+  const handleReview = async (samePerson: boolean, entry = reviewEntry) => {
+    if (!entry || !comparison || reviewing) return;
+    setReviewEntry(entry);
+    setReviewing(true);
     try {
-      const updated = await api.comparisons.review(comparison.id, reviewEntry.id, samePerson);
+      const updated = await api.comparisons.review(comparison.id, entry.id, samePerson);
       setComparison(updated);
       setReviewEntry(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao revisar');
+    } finally {
+      setReviewing(false);
     }
   };
 
@@ -168,9 +210,7 @@ export default function HomePage() {
     }
   };
 
-  const handleExportTab = async (tabId: string) => {
-    handleExportComparison();
-  };
+  const handleExportTab = () => handleExportComparison();
 
   if (!comparison) {
     return (
@@ -235,10 +275,11 @@ export default function HomePage() {
                   <div className={styles.periodSelects}>
                     <select
                       value={selectedPeriod?.month || ''}
-                      onChange={e => setSelectedPeriod(prev => prev ? { ...prev, month: parseInt(e.target.value, 10) } : null)}
+                      onChange={e => updatePeriod({ month: parseInt(e.target.value, 10) })}
                       className={styles.formSelect}
                       disabled={loading || !selectedPartnerId}
                       required
+                      aria-label="Mês da competência"
                     >
                       <option value="">Mês</option>
                       {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -247,10 +288,11 @@ export default function HomePage() {
                     </select>
                     <select
                       value={selectedPeriod?.year || ''}
-                      onChange={e => setSelectedPeriod(prev => prev ? { ...prev, year: parseInt(e.target.value, 10) } : null)}
+                      onChange={e => updatePeriod({ year: parseInt(e.target.value, 10) })}
                       className={styles.formSelect}
                       disabled={loading || !selectedPartnerId}
                       required
+                      aria-label="Ano da competência"
                     >
                       <option value="">Ano</option>
                       {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(y => (
@@ -309,6 +351,8 @@ export default function HomePage() {
                   'COMPARAR CLIENTES'
                 )}
               </button>
+
+              {loading && <LoadingSteps currentStep={loadingStep} />}
             </section>
           </div>
         </main>
@@ -387,9 +431,9 @@ export default function HomePage() {
                   originalA={entry.originalA || ''}
                   originalB={entry.originalB || ''}
                   similarity={entry.similarity || 0}
-                  onSame={() => setReviewEntry(entry)}
-                  onDifferent={() => setReviewEntry(entry)}
-                  loading={false}
+                  onSame={() => handleReview(true, entry)}
+                  onDifferent={() => handleReview(false, entry)}
+                  loading={reviewing && reviewEntry?.id === entry.id}
                 />
               ))}
               {getTabEntries('review').length === 0 && (
@@ -428,22 +472,10 @@ export default function HomePage() {
               title={currentTab?.label || ''}
               showOccurrences={!['onlyA', 'onlyB'].includes(activeTab)}
               onCopyAll={() => {}}
-              onExport={() => handleExportTab(activeTab)}
+              onExport={handleExportTab}
             />
           )}
 
-          {reviewEntry && (
-            <div className={styles.reviewModal} role="dialog" aria-modal="true" aria-labelledby="review-title">
-              <div className={styles.modalOverlay} onClick={() => setReviewEntry(null)} />
-              <ReviewMatch
-                originalA={reviewEntry.originalA || ''}
-                originalB={reviewEntry.originalB || ''}
-                similarity={reviewEntry.similarity || 0}
-                onSame={() => handleReview(true)}
-                onDifferent={() => handleReview(false)}
-              />
-            </div>
-          )}
         </div>
       </main>
     </div>

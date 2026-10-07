@@ -68,13 +68,23 @@ export async function createPartner(name: string) {
   return prisma.partner.create({ data: { name, slug } });
 }
 
-export async function updatePartner(id: string, name: string, active?: boolean) {
-  const slug = generateSlug(name);
-  const existing = await prisma.partner.findFirst({ where: { slug, NOT: { id } } });
-  if (existing) throw new AppError(409, 'Já existe uma parceira com nome similar');
+export async function updatePartner(id: string, name?: string, active?: boolean) {
+  const data: { name?: string; slug?: string; active?: boolean } = {};
+
+  if (name !== undefined) {
+    const normalizedName = name.trim();
+    const slug = generateSlug(normalizedName);
+    const existing = await prisma.partner.findFirst({ where: { slug, NOT: { id } } });
+    if (existing) throw new AppError(409, 'Já existe uma parceira com nome similar');
+    data.name = normalizedName;
+    data.slug = slug;
+  }
+
+  if (active !== undefined) data.active = active;
+
   return prisma.partner.update({
     where: { id },
-    data: { name, slug, ...(active !== undefined ? { active } : {}) },
+    data,
   });
 }
 

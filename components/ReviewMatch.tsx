@@ -13,7 +13,7 @@ interface ReviewMatchProps {
 
 export default function ReviewMatch({ originalA, originalB, similarity, onSame, onDifferent, loading }: ReviewMatchProps) {
   return (
-    <div className={styles.container} role="dialog" aria-label="Revisar correspondência" aria-modal="true">
+    <div className={styles.container} role="group" aria-label="Revisar correspondência">
       <div className={styles.header}>
         <h3 className={styles.title}>Possível correspondência</h3>
         <div className={styles.similarity}>

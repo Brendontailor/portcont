@@ -12,6 +12,12 @@ async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> 
     credentials: 'include',
   });
 
+  if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/api/auth/')) {
+    const next = `${window.location.pathname}${window.location.search}`;
+    window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+    throw new Error('Sua sessão expirou. Entre novamente para continuar.');
+  }
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
     throw new Error(error.error || `HTTP ${res.status}`);
@@ -23,6 +29,11 @@ async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 async function fetchBlob(path: string): Promise<Blob> {
   const res = await fetch(path, { credentials: 'include' });
+  if (res.status === 401 && typeof window !== 'undefined') {
+    const next = `${window.location.pathname}${window.location.search}`;
+    window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+    throw new Error('Sua sessão expirou. Entre novamente para continuar.');
+  }
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Não foi possível gerar o arquivo' }));
     throw new Error(error.error || `HTTP ${res.status}`);

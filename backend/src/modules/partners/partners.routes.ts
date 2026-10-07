@@ -33,7 +33,7 @@ router.post('/', async (req, res, next) => {
 router.patch('/:id', async (req, res, next) => {
   try {
     const data = updatePartnerSchema.parse(req.body);
-    const partner = await service.updatePartner(req.params.id, data.name ?? '', data.active);
+    const partner = await service.updatePartner(req.params.id, data.name, data.active);
     res.json(partner);
   } catch (err) { next(err); }
 });

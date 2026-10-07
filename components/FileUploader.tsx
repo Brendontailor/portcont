@@ -27,6 +27,9 @@ export default function FileUploader({
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const acceptedExtensions = acceptedTypes
+    .filter(type => type.startsWith('.'))
+    .map(type => type.toLowerCase());
 
   const validateFile = useCallback((f: File): boolean => {
     const maxSize = maxSizeMB * 1024 * 1024;
@@ -34,14 +37,16 @@ export default function FileUploader({
       setError(`Arquivo excede o tamanho máximo de ${maxSizeMB}MB`);
       return false;
     }
-    const isValidType = acceptedTypes.some(type => f.type === type || f.name.toLowerCase().endsWith(type.replace('application/', '.').replace('vnd.openxmlformats-officedocument.', '').replace('ms-excel', 'xls')));
+    const lowerName = f.name.toLowerCase();
+    const isValidType = acceptedTypes.includes(f.type)
+      || acceptedExtensions.some(extension => lowerName.endsWith(extension));
     if (!isValidType) {
       setError('Formato de arquivo não suportado. Use PDF, XLSX, XLS ou CSV');
       return false;
     }
     setError(null);
     return true;
-  }, [acceptedTypes, maxSizeMB]);
+  }, [acceptedExtensions, acceptedTypes, maxSizeMB]);
 
   const handleFileSelect = useCallback((f: File | null) => {
     if (f && !validateFile(f)) {
@@ -87,6 +92,13 @@ export default function FileUploader({
     if (!disabled) inputRef.current?.click();
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      triggerInput();
+    }
+  };
+
   const getFileIcon = (f: File) => {
     if (f.type === 'application/pdf') return '📄';
     if (f.type.includes('spreadsheet') || f.type.includes('excel') || f.name.endsWith('.xlsx') || f.name.endsWith('.xls')) return '📊';
@@ -105,10 +117,12 @@ export default function FileUploader({
         onDragOver={handleDrag}
         onDrop={handleDrop}
         onClick={triggerInput}
+        onKeyDown={handleKeyDown}
         role="button"
         tabIndex={disabled ? -1 : 0}
         aria-disabled={disabled}
-        aria-label={`Área de upload do arquivo ${label}`}
+        aria-label={file ? `${label}: ${file.name}. Clique para substituir o arquivo.` : `Selecionar arquivo para ${label}`}
+        aria-describedby={error ? `upload-error-${side}` : undefined}
       >
         <input
           ref={inputRef}
@@ -160,7 +174,7 @@ export default function FileUploader({
         )}
       </div>
 
-      {error && <p className={styles.error} role="alert">{error}</p>}
+      {error && <p id={`upload-error-${side}`} className={styles.error} role="alert">{error}</p>}
     </div>
   );
 }
