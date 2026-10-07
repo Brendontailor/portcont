@@ -3,7 +3,8 @@ vi.mock('../backend/src/lib/prisma.js', () => ({ prisma: { nameEquivalence: { fi
 import { prisma } from '../backend/src/lib/prisma.js';
 import { compareBases } from '../backend/src/modules/matching/comparisonEngine.service';
 import { normalizeName } from '../backend/src/modules/matching/normalizeName.service';
-const clients = (...names: string[]) => names.map(originalName => ({ originalName, normalizedName: normalizeName(originalName), occurrences: 1 }));
+const client = (originalName: string, occurrences = 1) => ({ originalName, normalizedName: normalizeName(originalName), occurrences });
+const clients = (...names: string[]) => names.map(name => client(name));
 beforeEach(() => vi.mocked(prisma.nameEquivalence.findMany).mockResolvedValue([]));
 describe('Conferência por nomes', () => {
   it('separa nomes nas duas bases e exclusivos de cada base', async () => {
@@ -50,5 +51,30 @@ describe('Conferência por nomes', () => {
     expect(result.matched).toHaveLength(1);
     expect(result.onlyA).toHaveLength(1);
     expect(result.matched[0].clientA.originalName).toBe('Fernando Ferreira');
+  });
+  it('conta cada ocorrência de nome repetido como registro', async () => {
+    const result = await compareBases(
+      [client('Bruna Mello Assis', 2)],
+      [client('Bruna Mello Assis', 2)],
+    );
+    expect(result.stats).toEqual({ totalA: 2, totalB: 2, matchedCount: 2, onlyACount: 0, onlyBCount: 0, reviewCount: 0 });
+    expect(result.matched[0].clientA.occurrences).toBe(2);
+  });
+  it('conta ocorrências excedentes como ausentes na outra base', async () => {
+    const result = await compareBases(
+      [client('Bruna Mello Assis', 2)],
+      [client('Bruna Mello Assis', 1)],
+    );
+    expect(result.stats).toEqual({ totalA: 2, totalB: 1, matchedCount: 1, onlyACount: 1, onlyBCount: 0, reviewCount: 0 });
+    expect(result.onlyA[0].occurrences).toBe(1);
+  });
+  it('preserva ocorrências quando os nomes repetidos aguardam revisão', async () => {
+    const result = await compareBases(
+      [client('Fernando Ferreira', 2)],
+      [client('Fernando Fereira', 2)],
+    );
+    expect(result.stats).toEqual({ totalA: 2, totalB: 2, matchedCount: 0, onlyACount: 0, onlyBCount: 0, reviewCount: 2 });
+    expect(result.review[0].clientA.occurrences).toBe(2);
+    expect(result.review[0].clientB.occurrences).toBe(2);
   });
 });

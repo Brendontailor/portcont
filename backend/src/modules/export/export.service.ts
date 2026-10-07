@@ -112,8 +112,10 @@ export async function generateComparisonXLSX(comparisonId: string): Promise<Buff
     ['RESUMO'],
     ['', ''],
     ['Métrica', 'Valor'],
-    ['Total Base A', data.comparison.totalA],
-    ['Total Base B', data.comparison.totalB],
+    ['Total Base A (ocorrências)', data.comparison.totalA],
+    ['Total Base B (ocorrências)', data.comparison.totalB],
+    ['Nomes distintos Base A', data.clientsA.length],
+    ['Nomes distintos Base B', data.clientsB.length],
     ['Encontrados nas duas', data.comparison.matchedCount],
     ['Somente A', data.comparison.onlyACount],
     ['Somente B', data.comparison.onlyBCount],
@@ -153,16 +155,16 @@ export async function generateComparisonXLSX(comparisonId: string): Promise<Buff
 
   const onlyAEntries = data.entries.filter(e => e.status === 'ONLY_A');
   const onlyAData = [
-    ['Nome'],
-    ...onlyAEntries.map(e => [e.originalA ?? '']),
+    ['Nome', 'Ocorrências'],
+    ...onlyAEntries.map(e => [e.originalA ?? '', e.occurrencesA ?? 1]),
   ];
   const wsOnlyA = XLSX.utils.aoa_to_sheet(onlyAData);
   XLSX.utils.book_append_sheet(wb, wsOnlyA, 'Somente A');
 
   const onlyBEntries = data.entries.filter(e => e.status === 'ONLY_B');
   const onlyBData = [
-    ['Nome'],
-    ...onlyBEntries.map(e => [e.originalB ?? '']),
+    ['Nome', 'Ocorrências'],
+    ...onlyBEntries.map(e => [e.originalB ?? '', e.occurrencesB ?? 1]),
   ];
   const wsOnlyB = XLSX.utils.aoa_to_sheet(onlyBData);
   XLSX.utils.book_append_sheet(wb, wsOnlyB, 'Somente B');
@@ -185,8 +187,9 @@ export async function generateComparisonXLSX(comparisonId: string): Promise<Buff
   XLSX.utils.book_append_sheet(wb, detail, 'Conferência detalhada');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
     ['Campo', 'Como interpretar'],
-    ['Totais das bases', 'Nomes normalizados únicos. As repetições estão nas ocorrências.'],
-    ['Ocorrências', 'Quantidade de vezes que o nome aparece no arquivo.'],
+    ['Totais das bases', 'Contam todas as ocorrências do arquivo, inclusive nomes repetidos.'],
+    ['Nomes distintos', 'Quantidade de nomes normalizados diferentes em cada base.'],
+    ['Ocorrências', 'Quantidade de vezes que o nome aparece no arquivo; cada ocorrência entra nos totais.'],
     ['Similaridade', 'Comparação da escrita dos nomes, não uma probabilidade de identidade.'],
     ['Nas duas bases', 'Inclui correspondências automáticas e confirmadas na revisão.'],
     ['Revisão pendente', 'É necessário confirmar se os nomes representam o mesmo cliente.'],

@@ -192,24 +192,41 @@ export async function compareBases(
 
   const matched: MatchCandidate[] = [];
   const review: MatchCandidate[] = [];
-  const matchedANames = new Set<string>();
-  const matchedBNames = new Set<string>();
+  const reviewANames = new Set<string>();
+  const reviewBNames = new Set<string>();
+  const matchedOccurrencesA = new Map<string, number>();
+  const matchedOccurrencesB = new Map<string, number>();
 
   for (const candidate of resolved) {
     const classification = classifyMatch(candidate.similarity);
     if (classification === 'MATCHED') {
-      matched.push(candidate);
-      matchedANames.add(candidate.clientA.normalizedName);
-      matchedBNames.add(candidate.clientB.normalizedName);
+      const pairedOccurrences = Math.min(candidate.clientA.occurrences, candidate.clientB.occurrences);
+      matched.push({
+        ...candidate,
+        clientA: { ...candidate.clientA, occurrences: pairedOccurrences },
+        clientB: { ...candidate.clientB, occurrences: pairedOccurrences },
+      });
+      matchedOccurrencesA.set(candidate.clientA.normalizedName, pairedOccurrences);
+      matchedOccurrencesB.set(candidate.clientB.normalizedName, pairedOccurrences);
     } else if (classification === 'REVIEW') {
       review.push(candidate);
-      matchedANames.add(candidate.clientA.normalizedName);
-      matchedBNames.add(candidate.clientB.normalizedName);
+      reviewANames.add(candidate.clientA.normalizedName);
+      reviewBNames.add(candidate.clientB.normalizedName);
     }
   }
 
-  const onlyA = dedupedA.filter(c => !matchedANames.has(c.normalizedName));
-  const onlyB = dedupedB.filter(c => !matchedBNames.has(c.normalizedName));
+  const onlyA = dedupedA.flatMap(client => {
+    if (reviewANames.has(client.normalizedName)) return [];
+    const remainingOccurrences = client.occurrences - (matchedOccurrencesA.get(client.normalizedName) ?? 0);
+    return remainingOccurrences > 0 ? [{ ...client, occurrences: remainingOccurrences }] : [];
+  });
+  const onlyB = dedupedB.flatMap(client => {
+    if (reviewBNames.has(client.normalizedName)) return [];
+    const remainingOccurrences = client.occurrences - (matchedOccurrencesB.get(client.normalizedName) ?? 0);
+    return remainingOccurrences > 0 ? [{ ...client, occurrences: remainingOccurrences }] : [];
+  });
+  const totalOccurrencesA = dedupedA.reduce((total, client) => total + client.occurrences, 0);
+  const totalOccurrencesB = dedupedB.reduce((total, client) => total + client.occurrences, 0);
 
   return {
     matched,
@@ -217,12 +234,12 @@ export async function compareBases(
     onlyB,
     review,
     stats: {
-      totalA: dedupedA.length,
-      totalB: dedupedB.length,
-      matchedCount: matched.length,
-      onlyACount: onlyA.length,
-      onlyBCount: onlyB.length,
-      reviewCount: review.length,
+      totalA: totalOccurrencesA,
+      totalB: totalOccurrencesB,
+      matchedCount: matched.reduce((total, candidate) => total + candidate.clientA.occurrences, 0),
+      onlyACount: onlyA.reduce((total, client) => total + client.occurrences, 0),
+      onlyBCount: onlyB.reduce((total, client) => total + client.occurrences, 0),
+      reviewCount: review.reduce((total, candidate) => total + Math.min(candidate.clientA.occurrences, candidate.clientB.occurrences), 0),
     },
   };
 }

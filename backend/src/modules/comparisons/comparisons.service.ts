@@ -76,7 +76,35 @@ export async function reviewEntry(comparisonId: string, entryId: string, samePer
   }
 
   if (samePerson) {
-    await repo.updateEntryStatus(entryId, 'MATCHED');
+    const occurrencesA = entry.occurrencesA ?? 1;
+    const occurrencesB = entry.occurrencesB ?? 1;
+    const matchedOccurrences = Math.min(occurrencesA, occurrencesB);
+    await prisma.comparisonEntry.update({
+      where: { id: entryId },
+      data: { status: 'MATCHED', occurrencesA: matchedOccurrences, occurrencesB: matchedOccurrences },
+    });
+    if (occurrencesA > matchedOccurrences) {
+      await prisma.comparisonEntry.create({
+        data: {
+          comparisonId,
+          originalA: entry.originalA,
+          normalizedA: entry.normalizedA,
+          occurrencesA: occurrencesA - matchedOccurrences,
+          status: 'ONLY_A',
+        },
+      });
+    }
+    if (occurrencesB > matchedOccurrences) {
+      await prisma.comparisonEntry.create({
+        data: {
+          comparisonId,
+          originalB: entry.originalB,
+          normalizedB: entry.normalizedB,
+          occurrencesB: occurrencesB - matchedOccurrences,
+          status: 'ONLY_B',
+        },
+      });
+    }
   } else if (hasBothSides) {
     await prisma.comparisonEntry.update({
       where: { id: entryId },
@@ -100,13 +128,26 @@ export async function reviewEntry(comparisonId: string, entryId: string, samePer
   const entries = await prisma.comparisonEntry.findMany({ where: { comparisonId } });
   const comparison = await prisma.comparison.findUnique({ where: { id: comparisonId } });
   if (comparison) {
+    const countSide = (side: 'A' | 'B', status?: string) => entries.reduce((total, item) => {
+      if (status && item.status !== status) return total;
+      const name = side === 'A' ? item.originalA : item.originalB;
+      const occurrences = side === 'A' ? item.occurrencesA : item.occurrencesB;
+      return total + (name ? occurrences ?? 1 : 0);
+    }, 0);
+    const countStatus = (status: string) => entries.reduce((total, item) => {
+      if (item.status !== status) return total;
+      if (status === 'REVIEW') return total + Math.min(item.occurrencesA ?? 1, item.occurrencesB ?? 1);
+      return total + (item.occurrencesA ?? item.occurrencesB ?? 1);
+    }, 0);
     await prisma.comparison.update({
       where: { id: comparisonId },
       data: {
-        matchedCount: entries.filter(e => e.status === 'MATCHED').length,
-        onlyACount: entries.filter(e => e.status === 'ONLY_A').length,
-        onlyBCount: entries.filter(e => e.status === 'ONLY_B').length,
-        reviewCount: entries.filter(e => e.status === 'REVIEW').length,
+        totalA: countSide('A'),
+        totalB: countSide('B'),
+        matchedCount: countStatus('MATCHED'),
+        onlyACount: countStatus('ONLY_A'),
+        onlyBCount: countStatus('ONLY_B'),
+        reviewCount: countStatus('REVIEW'),
       },
     });
   }
