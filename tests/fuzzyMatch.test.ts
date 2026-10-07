@@ -38,6 +38,12 @@ describe('calculateSimilarity', () => {
     expect(score).toBeGreaterThanOrEqual(85);
   });
 
+  it('sends a name missing a surname to review instead of treating it as absent', () => {
+    const score = testSimilarity('MARIA APARECIDA', 'MARIA APARECIDA DOS SANTOS');
+    expect(score).toBeGreaterThanOrEqual(85);
+    expect(score).toBeLessThan(95);
+  });
+
   it('should NOT match different last names', () => {
     const score = testSimilarity('JOAO CARLOS SILVA', 'JOAO CARLOS SOUZA');
     expect(score).toBeLessThan(85);

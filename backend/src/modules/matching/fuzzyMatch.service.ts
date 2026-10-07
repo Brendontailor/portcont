@@ -153,6 +153,16 @@ export function calculateSimilarity(a: NormalizedName, b: NormalizedName): numbe
   // or a single common word is not enough to establish a person's identity.
   if (mainA.length < 2 || mainB.length < 2) return 0;
 
+  // If one list contains an incomplete name but its first name and at least
+  // one other identifying token exactly match, surface it for human review.
+  // This must never auto-confirm identity because the omitted surname matters.
+  const shorter = mainA.length <= mainB.length ? mainA : mainB;
+  const longer = mainA.length <= mainB.length ? mainB : mainA;
+  const isPartialName = shorter.length < longer.length
+    && shorter[0] === longer[0]
+    && shorter.every(token => longer.includes(token));
+  if (isPartialName) return env.REVIEW_THRESHOLD;
+
   const jw = jaroWinkler(a.normalized, b.normalized) * 100;
   const lev = (1 - levenshteinDistance(a.normalized, b.normalized) / Math.max(a.normalized.length, b.normalized.length)) * 100;
   const wordSim = wordLevelSimilarity(mainA, mainB) * 100;

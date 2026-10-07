@@ -17,6 +17,12 @@ describe('Conferência por nomes', () => {
     expect(result.onlyA).toHaveLength(0);
     expect(result.onlyB).toHaveLength(0);
   });
+  it('envia nomes com sobrenome faltando para revisão, não para exclusivos', async () => {
+    const result = await compareBases(clients('Maria Aparecida'), clients('Maria Aparecida dos Santos'));
+    expect(result.review).toHaveLength(1);
+    expect(result.onlyA).toHaveLength(0);
+    expect(result.onlyB).toHaveLength(0);
+  });
   it('encontra candidatos com erro no início de ambos os nomes', async () => {
     const result = await compareBases(clients('Alexandrino Fernandes'), clients('Alixandrino Farnandes'));
     expect(result.matched.length + result.review.length).toBe(1);
