@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import ConferenceReport from '@/components/ConferenceReport';
 import Header from '@/components/Header';
 import FileUploader from '@/components/FileUploader';
@@ -182,9 +183,14 @@ export default function HomePage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.container}>
-            <section aria-labelledby="hero-title" style={{ marginBottom: 24 }}>
-              <h1 id="hero-title">Conferência de clientes</h1>
-              <p>Selecione a parceira e os arquivos. Depois, revise as diferenças e baixe o relatório completo.</p>
+            <section className={styles.heroPanel} aria-labelledby="hero-title">
+              <div className={styles.heroCopy}>
+                <span className={styles.heroEyebrow}><span aria-hidden="true" /> CONFERÊNCIA DE CLIENTES</span>
+                <h1 id="hero-title">Compare suas listas com clareza.</h1>
+                <p>Encontre quem está nas duas relações e confira os clientes que aparecem só na sua lista ou só na lista da parceira.</p>
+                <div className={styles.heroNote}><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg> Confira os arquivos antes de concluir a conferência.</div>
+              </div>
+              <div className={styles.heroArt} aria-hidden="true"><Image src="/images/portcont/portcont-conferencia.svg" alt="" fill priority sizes="(max-width: 800px) 100vw, 45vw" /></div>
             </section>
 
             <section className={styles.formSection} aria-labelledby="form-title">
@@ -261,7 +267,6 @@ export default function HomePage() {
                   acceptedTypes={ACCEPTED_TYPES}
                   maxSizeMB={MAX_SIZE_MB}
                   disabled={loading}
-                  illustration="/images/portcont/portcont-upload-arquivos.png"
                 />
                 <FileUploader
                   label="LISTA DA PARCEIRA · BASE B"
@@ -270,7 +275,6 @@ export default function HomePage() {
                   acceptedTypes={ACCEPTED_TYPES}
                   maxSizeMB={MAX_SIZE_MB}
                   disabled={loading}
-                  illustration="/images/portcont/portcont-upload-arquivos.png"
                 />
               </div>
 
