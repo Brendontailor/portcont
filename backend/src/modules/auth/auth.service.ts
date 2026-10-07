@@ -18,6 +18,7 @@ interface SessionPayload {
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
+    console.error('[AUTH CONFIG ERROR] JWT_SECRET is missing or shorter than 32 characters');
     throw new AppError(500, 'Autenticação não configurada no servidor');
   }
   return secret;

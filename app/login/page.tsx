@@ -3,7 +3,8 @@
 import { FormEvent, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { api } from '@/services/api';
+import { getLoginRedirectPath } from '@/lib/auth';
+import { api, ApiError } from '@/services/api';
 import styles from './page.module.css';
 
 export default function LoginPage() {
@@ -23,15 +24,18 @@ export default function LoginPage() {
     try {
       await api.auth.login(username, password);
       const params = new URLSearchParams(window.location.search);
-      const requestedPath = params.get('next');
-      const destination = requestedPath?.startsWith('/') && !requestedPath.startsWith('//')
-        ? requestedPath
-        : '/';
-
-      router.replace(destination);
+      router.replace(getLoginRedirectPath(params.get('next')));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível entrar no PortCont.');
+      if (err instanceof ApiError && err.status === 400) {
+        setError('Informe seu usuário e sua senha.');
+      } else if (err instanceof ApiError && err.status === 401) {
+        setError('Usuário ou senha inválidos.');
+      } else if (err instanceof ApiError && err.status >= 500) {
+        setError('Não foi possível entrar no momento. Tente novamente.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Não foi possível entrar no PortCont.');
+      }
     } finally {
       setLoading(false);
     }

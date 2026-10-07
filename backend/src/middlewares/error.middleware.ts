@@ -13,8 +13,28 @@ export class AppError extends Error {
   }
 }
 
+function redactSecrets(message: string): string {
+  let safeMessage = message;
+  for (const key of ['DATABASE_URL', 'DIRECT_URL', 'JWT_SECRET', 'ADMIN_PASSWORD']) {
+    const secret = process.env[key];
+    if (secret) safeMessage = safeMessage.split(secret).join('[REDACTED]');
+  }
+  return safeMessage.replace(/postgres(?:ql)?:\/\/\S+/gi, '[DATABASE_URL]');
+}
+
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction) {
-  console.error(`[ERROR] ${err.name}: ${err.message}`, err.stack);
+  const isProduction = env.NODE_ENV === 'production';
+  if (isProduction) {
+    const metadata = err as Error & { code?: unknown; errorCode?: unknown };
+    const code = typeof metadata.code === 'string'
+      ? metadata.code
+      : typeof metadata.errorCode === 'string' ? metadata.errorCode : undefined;
+    if (!(err instanceof AppError) || err.statusCode >= 500) {
+      console.error('[ERROR]', { name: err.name, code, message: redactSecrets(err.message) });
+    }
+  } else {
+    console.error(`[ERROR] ${err.name}: ${err.message}`, err.stack);
+  }
 
   if (err instanceof ZodError) {
     return res.status(400).json({
@@ -37,7 +57,6 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
     return res.status(400).json({ error: 'Erro no upload do arquivo' });
   }
 
-  const isProduction = env.NODE_ENV === 'production';
   return res.status(500).json({
     error: isProduction ? 'Erro interno do servidor' : err.message,
     ...(isProduction ? {} : { stack: err.stack }),
