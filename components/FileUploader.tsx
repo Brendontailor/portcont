@@ -100,13 +100,6 @@ export default function FileUploader({
     }
   };
 
-  const getFileIcon = (f: File) => {
-    if (f.type === 'application/pdf') return '📄';
-    if (f.type.includes('spreadsheet') || f.type.includes('excel') || f.name.endsWith('.xlsx') || f.name.endsWith('.xls')) return '📊';
-    if (f.type.includes('csv') || f.name.endsWith('.csv')) return '📋';
-    return '📄';
-  };
-
   return (
     <div className={styles.wrapper}>
       <label className={styles.label}>{label}</label>
@@ -137,7 +130,11 @@ export default function FileUploader({
 
         {file ? (
           <div className={styles.fileInfo}>
-            <span className={styles.fileIcon}>{getFileIcon(file)}</span>
+            <span className={styles.fileIcon} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2.75h8l4 4V21.25H6z"/><path d="M14 2.75v4h4M9 12h6M9 16h6"/>
+              </svg>
+            </span>
             <div className={styles.fileDetails}>
               <div className={styles.fileName}>{file.name}</div>
               <div className={styles.fileMeta}>
@@ -167,7 +164,7 @@ export default function FileUploader({
                 />
               </div>
             )}
-            <div className={styles.dropzoneIcon}>📁</div>
+            <div className={styles.dropzoneIcon} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v6M9.5 14l2.5 2.5 2.5-2.5"/></svg></div>
             <p className={styles.dropzoneText}>Arraste o arquivo aqui ou clique para selecionar</p>
             <p className={styles.dropzoneHint}>
               PDF, XLSX, XLS ou CSV • Máx. {maxSizeMB}MB

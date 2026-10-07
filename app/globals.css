@@ -1,13 +1,13 @@
 :root {
-  --color-bg: #f0f4f8;
+  --color-bg: #f4f7fb;
   --color-surface: #ffffff;
-  --color-border: #d0dce8;
+  --color-border: #d4dfeb;
   --color-border-light: #e2eaf2;
   --color-text: #1e293b;
   --color-text-muted: #64748b;
-  --color-primary: #2c5282;
-  --color-primary-hover: #274a75;
-  --color-primary-light: #e8eef7;
+  --color-primary: #285b8e;
+  --color-primary-hover: #204a75;
+  --color-primary-light: #eaf2fa;
   --color-success: #276749;
   --color-success-light: #e8f5ed;
   --color-warning: #b7791f;
@@ -44,7 +44,7 @@ body {
   font-size: 14px;
   line-height: 1.5;
   color: var(--color-text);
-  background-color: var(--color-bg);
+  background: radial-gradient(ellipse at 50% -18%, rgba(203, 224, 245, .38), transparent 47%), var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -99,7 +99,7 @@ input, select, textarea {
   border-radius: var(--radius-md);
   font-weight: 500;
   font-size: 14px;
-  transition: all var(--transition);
+  transition: transform var(--transition), box-shadow var(--transition), background-color var(--transition), border-color var(--transition);
   white-space: nowrap;
 }
 
@@ -108,13 +108,21 @@ input, select, textarea {
   cursor: not-allowed;
 }
 
+.btn:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 3px solid rgba(44, 102, 158, .42);
+  outline-offset: 3px;
+}
+
 .btn-primary {
-  background-color: var(--color-primary);
+  background: linear-gradient(135deg, #326d9f, var(--color-primary));
   color: white;
+  box-shadow: 0 5px 12px rgba(40, 91, 142, .18);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(40, 91, 142, .22);
 }
 
 .btn-secondary {
@@ -126,6 +134,10 @@ input, select, textarea {
 .btn-secondary:hover:not(:disabled) {
   background-color: var(--color-bg);
   border-color: var(--color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 
 .btn-danger {

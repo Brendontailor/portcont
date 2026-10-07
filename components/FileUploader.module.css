@@ -15,16 +15,19 @@
   position: relative;
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 32px 24px;
+  padding: 30px 24px;
   text-align: center;
   transition: all var(--transition);
   cursor: pointer;
-  background-color: var(--color-surface);
+  background: linear-gradient(145deg, #fff 15%, #f8fbff 100%);
+  box-shadow: 0 8px 20px rgba(25, 55, 90, 0.035);
 }
 
 .dropzone:hover:not(.hasFile):not(.disabled) {
   border-color: var(--color-primary);
   background-color: var(--color-primary-light);
+  box-shadow: 0 12px 26px rgba(44, 82, 130, 0.1);
+  transform: translateY(-2px);
 }
 
 .dropzone.active {
@@ -57,8 +60,18 @@
 }
 
 .dropzoneIcon {
-  font-size: 48px;
-  opacity: 0.5;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.dropzoneIcon svg {
+  width: 27px;
+  height: 27px;
 }
 
 .dropzoneText {
@@ -102,7 +115,25 @@
 }
 
 .fileIcon {
-  font-size: 28px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.fileIcon svg { width: 23px; height: 23px; }
+
+.label {
+  letter-spacing: .02em;
+}
+
+.dropzone:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 .fileDetails {

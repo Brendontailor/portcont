@@ -56,14 +56,17 @@ export default function Header() {
         <div className={styles.rightArea}>
           <nav className={styles.nav} aria-label="Navegação principal">
             <ul className={styles.navList}>
-              {navItems.map(item => (
+              {navItems.map((item, index) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     className={`${styles.navLink} ${pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)) ? styles.active : ''}`}
                     aria-current={pathname === item.href ? 'page' : undefined}
                   >
-                    {item.label}
+                    <svg className={styles.navIcon} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      {index === 0 ? <><path d="M4 5h16v14H4z"/><path d="M8 9h3M8 13h8M8 16h5M15 8l2 2 3-4"/></> : index === 1 ? <><path d="M4 5h16v15H4z"/><path d="M8 3v4M16 3v4M4 9h16M8 13h3M8 16h7"/></> : <><path d="M3 20h18M5 20V8l7-4 7 4v12"/><path d="M9 20v-6h6v6M8 10h.01M16 10h.01"/></>}
+                    </svg>
+                    <span>{item.label}</span>
                   </Link>
                 </li>
               ))}
@@ -73,7 +76,8 @@ export default function Header() {
           <div className={styles.account}>
             {user && <span className={styles.username} title={user.username}>{user.username}</span>}
             <button className={styles.logoutButton} type="button" onClick={handleLogout} disabled={loggingOut}>
-              {loggingOut ? 'Saindo...' : 'Sair'}
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+              <span>{loggingOut ? 'Saindo...' : 'Sair'}</span>
             </button>
           </div>
         </div>
