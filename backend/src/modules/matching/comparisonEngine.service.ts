@@ -17,14 +17,25 @@ function deduplicateClients(clients: ParsedClient[]): ParsedClient[] {
   return Array.from(map.values());
 }
 
+function tokenBlocks(token: string): string[] {
+  const blocks = [`exact:${token}`];
+  if (token.length >= 3) blocks.push(`prefix:${token.slice(0, 3)}`);
+  // A shared deletion signature also catches a typo in the first letters.
+  // These blocks only propose candidates; similarity still decides the result.
+  if (token.length >= 4) {
+    blocks.push(`edit:${token}`);
+    for (let i = 0; i < token.length; i++) blocks.push(`edit:${token.slice(0, i)}${token.slice(i + 1)}`);
+  }
+  return blocks;
+}
+
 function buildTokenIndex(clients: ParsedClient[]): Map<string, Set<ParsedClient>> {
   const index = new Map<string, Set<ParsedClient>>();
   for (const client of clients) {
     const { main } = getNameTokens(client.normalizedName);
     const blocks = new Set<string>();
     for (const token of main) {
-      blocks.add(token);
-      if (token.length >= 3) blocks.add(token.slice(0, 3));
+      for (const block of tokenBlocks(token)) blocks.add(block);
     }
     for (const block of blocks) {
       let set = index.get(block);
@@ -42,10 +53,8 @@ function getCandidateSet(client: ParsedClient, index: Map<string, Set<ParsedClie
   const { main } = getNameTokens(client.normalizedName);
   const candidates = new Set<ParsedClient>();
   for (const token of main) {
-    const exact = index.get(token);
-    if (exact) for (const c of exact) candidates.add(c);
-    if (token.length >= 3) {
-      const block = index.get(token.slice(0, 3));
+    for (const key of tokenBlocks(token)) {
+      const block = index.get(key);
       if (block) for (const c of block) candidates.add(c);
     }
   }
@@ -111,6 +120,7 @@ function createCandidates(
 
     for (const clientB of possibleB) {
       if (!remainingB.has(clientB.normalizedName)) continue;
+      if (equivalences.get(clientA.normalizedName)?.get(clientB.normalizedName) === false) continue;
 
       let normalizedB = nameCache.get(clientB.normalizedName);
       if (!normalizedB) {

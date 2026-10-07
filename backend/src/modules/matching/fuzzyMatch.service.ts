@@ -83,7 +83,7 @@ function fuzzyTokenSetSimilarity(mainA: string[], mainB: string[]): number {
   let intersection = 0;
 
   for (const t of mainA) {
-    if (setB.has(t)) {
+    if (setB.has(t) && !usedB.has(t)) {
       intersection += 1;
       usedB.add(t);
       continue;
@@ -99,7 +99,7 @@ function fuzzyTokenSetSimilarity(mainA: string[], mainB: string[]): number {
     }
   }
 
-  const union = new Set([...mainA, ...mainB]).size;
+  const union = mainA.length + mainB.length - intersection;
   if (union === 0) return 0;
   return intersection / union;
 }
@@ -176,7 +176,10 @@ export function calculateSimilarity(a: NormalizedName, b: NormalizedName): numbe
     return Math.min(result, 92);
   }
 
-  return result;
+  // Spelling similarity is not proof of identity. Keep differing name tokens
+  // for review, even when a small typo produces a very high score.
+  const sameTokens = mainA.length === mainB.length && mainA.every((token, i) => token === mainB[i]);
+  return sameTokens ? result : Math.min(result, env.MATCH_THRESHOLD - 1);
 }
 
 export function hasCommonTokenSignal(a: NormalizedName, b: NormalizedName): boolean {
