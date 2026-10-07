@@ -135,17 +135,21 @@ export function extractClientsFromPdfText(fullText: string): ParseResult {
 
   const nameBuffers: string[] = [];
   const clientsMap = new Map<string, ParsedClient>();
+  let currentRowHasViewLink = false;
 
   const flushBuffer = () => {
     if (nameBuffers.length > 0) {
       registerClient(clientsMap, nameBuffers.join(' '));
       nameBuffers.length = 0;
     }
+    currentRowHasViewLink = false;
   };
 
   for (const sourceLine of lines) {
     const firstCodePoint = sourceLine.codePointAt(0) ?? 0;
     const hasRowIcon = firstCodePoint >= 0xe000 && firstCodePoint <= 0xf8ff;
+    const hasInlineSerial = /\b(?:HWTC|FHTT|ZTEG|ITBS|DD18|MONU|UBNT)[A-Z0-9]{6,}\b/i.test(sourceLine);
+    const hasViewLink = /\/onu\/view\/\d+/i.test(sourceLine);
     let iconPrefixLength = 0;
     if (hasRowIcon) {
       for (const char of sourceLine) {
@@ -155,7 +159,8 @@ export function extractClientsFromPdfText(fullText: string): ParseResult {
       }
     }
     const line = hasRowIcon ? sourceLine.slice(iconPrefixLength) : sourceLine;
-    if (hasRowIcon) flushBuffer();
+    if (hasRowIcon || (hasInlineSerial && currentRowHasViewLink && nameBuffers.length > 0)) flushBuffer();
+    if (hasViewLink) currentRowHasViewLink = true;
     if (!line) continue;
     // SmartOLT emits a connection/status glyph at the beginning of every ONU
     // row. It is the most reliable row boundary for names wrapped around the

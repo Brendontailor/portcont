@@ -158,6 +158,27 @@ Visualizar (/onu/view/66) eberson bierci ferraz FHTT04AB6CB8
     expect(result.possiblyIncomplete).toBe(false);
   });
 
+  it('separates SmartOLT records by ONU links and inline serials even without status icons', () => {
+    const text = `
+1-3 ONUs de 3 exibidas
+Visualizar (/onu/view/1) ROSANGELA BARBOSA
+DOS REIS
+(/onu/view/1)
+Visualizar (/onu/view/2) ARTUR COELHO HWTC803CCFB3
+RODRIGUES
+(/onu/view/2)
+Visualizar (/onu/view/3) EBERSON BIERCI FERRAZ FHTT04AB6CB8
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.map(client => client.normalizedName)).toEqual([
+      'ROSANGELA BARBOSA DOS REIS',
+      'ARTUR COELHO RODRIGUES',
+      'EBERSON BIERCI FERRAZ',
+    ]);
+    expect(result.extractedRecords).toBe(3);
+    expect(result.possiblyIncomplete).toBe(false);
+  });
+
   it('should reject invalid PDF binary with friendly error', async () => {
     const buffer = Buffer.from('isto nao e um pdf valido');
     await expect(parsePDF(buffer, { fileName: 'test.pdf', mimeType: 'application/pdf' }))
