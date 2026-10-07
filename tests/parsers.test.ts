@@ -37,6 +37,27 @@ HWTC12345678
     expect(result.clients.some(c => c.normalizedName === 'JULIO ROSA PORTO')).toBe(true);
   });
 
+  it('should extract SmartOLT names when SN/MAC is on the same line', () => {
+    const text = `
+ONUs Configurados
+SN, IP, nome, endereço, nº telefone, usuário ppp
+OLT 1 - OLT_ZTE…
+Status Visualizar Nome SN / MAC
+ ROSANGELA BARBOSA HWTCAE7D9AB4
+Visualizar (/onu/view/2319)
+DOS REIS
+(/onu/view/2319)
+ MARIA APARECIDA FHTT09473B52
+Visualizar (/onu/view/671)
+DEBLE PEREIRA
+(/onu/view/671)
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.some(c => c.normalizedName === 'ROSANGELA BARBOSA DOS REIS')).toBe(true);
+    expect(result.clients.some(c => c.normalizedName === 'MARIA APARECIDA DEBLE PEREIRA')).toBe(true);
+    expect(result.clients.some(c => c.normalizedName.includes('HWTCAE7D9AB4'))).toBe(false);
+  });
+
   it('should detect incomplete PDF', () => {
     const text = `
 1-100 ONUs de 295 exibidas

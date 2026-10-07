@@ -22,14 +22,29 @@ const TECHNICAL_PATTERNS = [
 const IGNORE_LINES = [
   /^visualizar\s*\(/i,
   /^status$/i,
+  /^status\s+visualizar\s+nome/i,
   /^sn\s*\/\s*mac$/i,
+  /^sn,\s*ip,\s*nome/i,
   /^pesquisar$/i,
   /^mais\s*filtros$/i,
   /^importar\s*\/\s*exportar$/i,
   /^página\s+\d+\s+de\s+\d+/i,
   /^configured\s+onus?$/i,
+  /^onus\s+configurados$/i,
+  /^olt\s+/i,
+  /^placa\s+/i,
+  /^porta\s+/i,
+  /^zona\s+/i,
+  /^cto\s+/i,
+  /^vlan\s+/i,
+  /^tipo\s+onu\s+/i,
+  /^perfil\s+/i,
+  /^tipo\s+pon\s+/i,
+  /^setor\s+/i,
   /^smartolt$/i,
+  /^smartolt\s+v/i,
   /^\d+-\d+\s+onus?\s+de\s+\d+\s+exibidas?$/i,
+  /^https?:\/\//i,
 ];
 
 const PREFIXES_TO_REMOVE = [
@@ -70,7 +85,12 @@ function extractDeclaredRecords(text: string): number | undefined {
 }
 
 function cleanLine(line: string): string {
-  return normalizeWhitespace(line.replace(/[^\p{L}\p{N}\s\-'.]/gu, '').trim());
+  let cleaned = line;
+  for (const pattern of TECHNICAL_PATTERNS) {
+    cleaned = cleaned.replace(pattern, ' ');
+  }
+  cleaned = cleaned.replace(/\b(?:HWTC|FHTT|ZTEG|ITBS|DD18|MONU|UBNT)[A-Z0-9]{6,}\b/gi, ' ');
+  return normalizeWhitespace(cleaned.replace(/[^\p{L}\p{N}\s\-'.]/gu, '').trim());
 }
 
 function isLikelyName(text: string): boolean {
