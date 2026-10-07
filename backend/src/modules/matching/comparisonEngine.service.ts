@@ -316,6 +316,7 @@ export async function saveComparison(
       entries: true,
       sourceFiles: true,
       clients: true,
+      period: { include: { partner: true } },
     },
   });
 
