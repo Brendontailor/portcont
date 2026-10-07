@@ -255,7 +255,7 @@ export default function HomePage() {
 
               <div className={styles.uploadGrid}>
                 <FileUploader
-                  label="BASE A"
+                  label="NOSSA LISTA · BASE A"
                   side="A"
                   onFileSelect={(_, file) => setFileA(file)}
                   acceptedTypes={ACCEPTED_TYPES}
@@ -264,7 +264,7 @@ export default function HomePage() {
                   illustration="/images/portcont/portcont-upload-arquivos.png"
                 />
                 <FileUploader
-                  label="BASE B"
+                  label="LISTA DA PARCEIRA · BASE B"
                   side="B"
                   onFileSelect={(_, file) => setFileB(file)}
                   acceptedTypes={ACCEPTED_TYPES}
