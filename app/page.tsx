@@ -1,16 +1,10 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import ConferenceReport from '@/components/ConferenceReport';
 import Header from '@/components/Header';
 import FileUploader from '@/components/FileUploader';
-import ComparisonSummary from '@/components/ComparisonSummary';
-import ComparisonTabs from '@/components/ComparisonTabs';
-import ClientList from '@/components/ClientList';
-import ReviewMatch from '@/components/ReviewMatch';
-import LoadingSteps from '@/components/LoadingSteps';
 import WarningBanner from '@/components/WarningBanner';
-import EmptyState from '@/components/EmptyState';
 import { api } from '@/services/api';
 import type { Comparison, ComparisonEntry } from '@/types';
 import { formatDateTime, downloadBlob } from '@/utils/helpers';
@@ -29,22 +23,6 @@ const ACCEPTED_TYPES = [
 
 const MAX_SIZE_MB = 15;
 
-interface TabConfig {
-  id: string;
-  label: string;
-  getClients?: (c: Comparison) => Array<{ originalName: string; normalizedName: string; occurrences: number; side: 'A' | 'B' }>;
-  getEntries?: (c: Comparison) => ComparisonEntry[];
-}
-
-const TABS: TabConfig[] = [
-  { id: 'baseA', label: 'Base A', getClients: (c: Comparison) => c.clients.filter(x => x.side === 'A') },
-  { id: 'baseB', label: 'Base B', getClients: (c: Comparison) => c.clients.filter(x => x.side === 'B') },
-  { id: 'onlyA', label: 'Somente A', getClients: (c: Comparison) => c.entries.filter(e => e.status === 'ONLY_A').map(e => ({ originalName: e.originalA!, normalizedName: e.normalizedA!, occurrences: e.occurrencesA || 1, side: 'A' as const })) },
-  { id: 'onlyB', label: 'Somente B', getClients: (c: Comparison) => c.entries.filter(e => e.status === 'ONLY_B').map(e => ({ originalName: e.originalB!, normalizedName: e.normalizedB!, occurrences: e.occurrencesB || 1, side: 'B' as const })) },
-  { id: 'matched', label: 'Correspondências', getEntries: (c: Comparison) => c.entries.filter(e => e.status === 'MATCHED') },
-  { id: 'review', label: 'Revisar', getEntries: (c: Comparison) => c.entries.filter(e => e.status === 'REVIEW') },
-];
-
 export default function HomePage() {
   const [fileA, setFileA] = useState<File | null>(null);
   const [fileB, setFileB] = useState<File | null>(null);
@@ -56,9 +34,7 @@ export default function HomePage() {
   const [loadingPeriods, setLoadingPeriods] = useState(false);
   const [comparisonTitle, setComparisonTitle] = useState('');
   const [comparison, setComparison] = useState<Comparison | null>(null);
-  const [activeTab, setActiveTab] = useState('baseA');
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(1);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [reviewEntry, setReviewEntry] = useState<ComparisonEntry | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -148,17 +124,14 @@ export default function HomePage() {
     }
 
     setLoading(true);
-    setLoadingStep(1);
     setError(null);
     setWarnings([]);
     setComparison(null);
-    setActiveTab('baseA');
 
     try {
       const periodId = selectedPeriod.id
         ?? (await api.periods.create(selectedPartnerId, selectedPeriod.year, selectedPeriod.month)).id;
 
-      setLoadingStep(5);
 
       const result = await api.comparisons.create(
         periodId,
@@ -168,8 +141,7 @@ export default function HomePage() {
       );
 
       setWarnings(result.warnings);
-      setLoadingStep(6);
-      setComparison(result.comparison);
+        setComparison(result.comparison);
       window.history.replaceState(null, '', `/?comparison=${result.comparison.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao processar comparação');
@@ -193,20 +165,6 @@ export default function HomePage() {
     }
   };
 
-  const getTabClients = (tabId: string) => {
-    if (!comparison) return [];
-    const tab = TABS.find(t => t.id === tabId);
-    if (!tab || !tab.getClients) return [];
-    return tab.getClients(comparison);
-  };
-
-  const getTabEntries = (tabId: string) => {
-    if (!comparison) return [];
-    const tab = TABS.find(t => t.id === tabId);
-    if (!tab || !tab.getEntries) return [];
-    return tab.getEntries(comparison);
-  };
-
   const handleExportComparison = async () => {
     if (!comparison) return;
     try {
@@ -217,7 +175,6 @@ export default function HomePage() {
     }
   };
 
-  const handleExportTab = () => handleExportComparison();
 
   if (!comparison) {
     return (
@@ -225,29 +182,13 @@ export default function HomePage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.container}>
-            <section className={styles.hero} aria-labelledby="hero-title">
-              <div className={styles.heroContent}>
-                <h1 id="hero-title" className={styles.heroTitle}>PORTCONT</h1>
-                <p className={styles.heroSubtitle}>Comparação inteligente de clientes</p>
-                <p className={styles.heroDescription}>
-                  Compare duas bases de clientes e encontre diferenças automaticamente,
-                  mesmo quando os nomes possuem pequenas divergências de escrita.
-                </p>
-              </div>
-              <div className={styles.heroImage} aria-hidden="true">
-                <Image
-                  src="/images/portcont/portcont-hero-comparacao.png"
-                  alt=""
-                  width={520}
-                  height={340}
-                  priority
-                  className={styles.heroImageEl}
-                />
-              </div>
+            <section aria-labelledby="hero-title" style={{ marginBottom: 24 }}>
+              <h1 id="hero-title">Conferência de clientes</h1>
+              <p>Selecione a parceira e os arquivos. Depois, revise as diferenças e baixe o relatório completo.</p>
             </section>
 
             <section className={styles.formSection} aria-labelledby="form-title">
-              <h2 id="form-title" className={styles.sectionTitle}>Nova Comparação</h2>
+              <h2 id="form-title" className={styles.sectionTitle}>1. Prepare sua conferência</h2>
 
               {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
               {warnings.map((w, i) => (
@@ -347,7 +288,7 @@ export default function HomePage() {
               </div>
 
               <button
-                className={`${styles.compareBtn} ${styles.btnPrimary}`}
+                className={`${styles.compareBtn} btn btn-primary`}
                 onClick={handleCompare}
                 disabled={loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
               >
@@ -357,11 +298,11 @@ export default function HomePage() {
                     Processando...
                   </>
                 ) : (
-                  'COMPARAR CLIENTES'
+                  'Comparar e abrir relatório'
                 )}
               </button>
 
-              {loading && <LoadingSteps currentStep={loadingStep} />}
+              {loading && <p role="status">Processando os arquivos e preparando a conferência. Aguarde…</p>}
             </section>
           </div>
         </main>
@@ -369,126 +310,14 @@ export default function HomePage() {
     );
   }
 
-  const currentTab = TABS.find(t => t.id === activeTab);
-  const isReviewTab = activeTab === 'review';
-  const isMatchedTab = activeTab === 'matched';
-
   return (
     <div className={styles.page}>
       <Header />
-      <main className={styles.main}>
-        <div className={styles.container}>
-          {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
-          {loading && (
-            <LoadingSteps currentStep={loadingStep} />
-          )}
-
-          {warnings.map((w, i) => (
-            <WarningBanner key={i} message={w} type="warning" onDismiss={() => setWarnings(prev => prev.filter((_, idx) => idx !== i))} />
-          ))}
-
-          <section className={styles.resultHeader}>
-            <div className={styles.resultMeta}>
-              <h2 className={styles.resultTitle}>
-                {comparison.period.partner.name} - {comparison.period.month.toString().padStart(2, '0')}/{comparison.period.year}
-              </h2>
-              <p className={styles.resultSubtitle}>
-                {comparison.title ? `${comparison.title} • ` : ''}
-                {comparison.fileAName} vs {comparison.fileBName}
-              </p>
-              <p className={styles.resultDate}>Criado em {formatDateTime(comparison.createdAt)}</p>
-            </div>
-            <div className={styles.resultActions}>
-              <a href="/" className="btn btn-secondary">Nova comparação</a>
-              <button className={styles.exportBtn} onClick={handleExportComparison}>
-                📊 Exportar Excel
-              </button>
-            </div>
-          </section>
-
-          <ComparisonSummary
-            totalA={comparison.totalA}
-            totalB={comparison.totalB}
-            matched={comparison.matchedCount}
-            onlyA={comparison.onlyACount}
-            onlyB={comparison.onlyBCount}
-            review={comparison.reviewCount}
-            declaredA={comparison.declaredA}
-            declaredB={comparison.declaredB}
-            incompleteA={comparison.incompleteA}
-            incompleteB={comparison.incompleteB}
-            fileAName={comparison.fileAName}
-            fileBName={comparison.fileBName}
-          />
-
-          <ComparisonTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            counts={{
-              baseA: comparison.totalA,
-              baseB: comparison.totalB,
-              onlyA: comparison.onlyACount,
-              onlyB: comparison.onlyBCount,
-              matched: comparison.matchedCount,
-              review: comparison.reviewCount,
-            }}
-          />
-
-          {isReviewTab ? (
-            <div className={styles.reviewList}>
-              {getTabEntries('review').map((entry, index) => (
-                <ReviewMatch
-                  key={`${entry.id}-${index}`}
-                  originalA={entry.originalA || ''}
-                  originalB={entry.originalB || ''}
-                  similarity={entry.similarity || 0}
-                  onSame={() => handleReview(true, entry)}
-                  onDifferent={() => handleReview(false, entry)}
-                  loading={reviewing}
-                />
-              ))}
-              {getTabEntries('review').length === 0 && (
-                <EmptyState icon="✅" title="Nenhuma revisão pendente" description="Todas as correspondências foram classificadas automaticamente." />
-              )}
-            </div>
-          ) : isMatchedTab ? (
-            <div className={styles.matchedTable}>
-              <table className="table" role="table">
-                <thead>
-                  <tr>
-                    <th scope="col">Base A</th>
-                    <th scope="col">Base B</th>
-                    <th scope="col" style={{ width: '120px', textAlign: 'right' }}>Similaridade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getTabEntries('matched').map((entry, index) => (
-                    <tr key={`${entry.id}-${index}`}>
-                      <td>{entry.originalA}</td>
-                      <td>{entry.originalB}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 500, color: 'var(--color-success)' }}>
-                        {entry.similarity === 100 ? '100%' : `${entry.similarity}%`}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {getTabEntries('matched').length === 0 && (
-                <EmptyState icon="🔗" title="Nenhuma correspondência" description="Não foram encontradas correspondências automáticas entre as bases." />
-              )}
-            </div>
-          ) : (
-            <ClientList
-              clients={getTabClients(activeTab)}
-              title={currentTab?.label || ''}
-              showOccurrences={!['onlyA', 'onlyB'].includes(activeTab)}
-              onCopyAll={() => {}}
-              onExport={handleExportTab}
-            />
-          )}
-
-        </div>
-      </main>
+      <main className={styles.main}><div className={styles.container}>
+        {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
+        {warnings.map((message, i) => <WarningBanner key={i} message={message} type="warning" />)}
+        <ConferenceReport comparison={comparison} onReview={handleReview} reviewing={reviewing} onExport={handleExportComparison} />
+      </div></main>
     </div>
   );
 }

@@ -19,6 +19,7 @@ interface ExportData {
     declaredB: number | null;
     incompleteA: boolean;
     incompleteB: boolean;
+    period: { year: number; month: number; partner: { name: string } };
   };
   entries: {
     originalA: string | null;
@@ -40,6 +41,7 @@ async function getExportData(comparisonId: string): Promise<ExportData | null> {
     include: {
       entries: true,
       clients: true,
+      period: { include: { partner: true } },
     },
   });
 
@@ -51,6 +53,7 @@ async function getExportData(comparisonId: string): Promise<ExportData | null> {
   return {
     comparison: {
       id: comparison.id,
+      period: comparison.period,
       title: comparison.title,
       fileAName: comparison.fileAName,
       fileBName: comparison.fileBName,
@@ -85,7 +88,7 @@ function formatDate(date: Date): string {
 }
 
 function formatDateTime(date: Date): string {
-  return date.toLocaleString('pt-BR');
+  return date.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
 export async function generateComparisonXLSX(comparisonId: string): Promise<Buffer | null> {
@@ -97,8 +100,10 @@ export async function generateComparisonXLSX(comparisonId: string): Promise<Buff
   const summaryData = [
     ['PORTCONT - Relatório de Comparação'],
     [''],
-    ['Parceira', ''],
-    ['Competência', ''],
+    ['Parceira', data.comparison.period.partner.name],
+    ['Competência', `${String(data.comparison.period.month).padStart(2, '0')}/${data.comparison.period.year}`],
+    ['Título', data.comparison.title ?? 'Sem título'],
+    ['Identificador', data.comparison.id],
     ['Data da Comparação', formatDateTime(data.comparison.createdAt)],
     [''],
     ['Arquivo A', data.comparison.fileAName],
@@ -169,6 +174,32 @@ export async function generateComparisonXLSX(comparisonId: string): Promise<Buff
   ];
   const wsReview = XLSX.utils.aoa_to_sheet(reviewData);
   XLSX.utils.book_append_sheet(wb, wsReview, 'Revisar');
+
+  const labels: Record<string, string> = { MATCHED: 'Nas duas bases', ONLY_A: 'Somente A', ONLY_B: 'Somente B', REVIEW: 'Revisão pendente' };
+  const detail = XLSX.utils.aoa_to_sheet([
+    ['Situação', 'Nome A', 'Nome B', 'Ocorrências A', 'Ocorrências B', 'Diferença A - B', 'Similaridade (%)', 'Nome normalizado A', 'Nome normalizado B', 'Conferência'],
+    ...data.entries.map(e => [labels[e.status] ?? e.status, e.originalA ?? '', e.originalB ?? '', e.occurrencesA ?? '', e.occurrencesB ?? '',
+      e.occurrencesA != null && e.occurrencesB != null ? e.occurrencesA - e.occurrencesB : '', e.similarity ?? '', e.normalizedA ?? '', e.normalizedB ?? '',
+      e.status === 'REVIEW' ? 'Confirmar se representam o mesmo cliente' : e.status === 'MATCHED' ? (e.occurrencesA !== e.occurrencesB ? 'Ocorrências diferentes' : 'Correspondência registrada') : 'Ausente na outra base']),
+  ]);
+  XLSX.utils.book_append_sheet(wb, detail, 'Conferência detalhada');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Campo', 'Como interpretar'],
+    ['Totais das bases', 'Nomes normalizados únicos. As repetições estão nas ocorrências.'],
+    ['Ocorrências', 'Quantidade de vezes que o nome aparece no arquivo.'],
+    ['Similaridade', 'Comparação da escrita dos nomes, não uma probabilidade de identidade.'],
+    ['Nas duas bases', 'Inclui correspondências automáticas e confirmadas na revisão.'],
+    ['Revisão pendente', 'É necessário confirmar se os nomes representam o mesmo cliente.'],
+    ['Arquivo incompleto', 'Confira o arquivo original antes de concluir a conferência.'],
+    ['Escopo', 'Todos os registros da comparação, sem aplicar filtros da tela.'],
+    ['Datas', 'Horário de Brasília (America/Sao_Paulo).'],
+  ]), 'Como interpretar');
+  for (const name of wb.SheetNames) {
+    const sheet = wb.Sheets[name];
+    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+    sheet['!cols'] = Array.from({ length: range.e.c + 1 }, (_, col) => ({ wch: name === 'Como interpretar' && col === 1 ? 95 : name === 'Resumo' ? 45 : col === 0 ? 25 : 34 }));
+    if (name !== 'Resumo' && name !== 'Como interpretar') sheet['!autofilter'] = { ref: sheet['!ref'] || 'A1' };
+  }
 
   const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   return Buffer.from(buffer);
