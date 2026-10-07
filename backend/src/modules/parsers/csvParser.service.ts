@@ -193,7 +193,7 @@ export async function parseCSV(buffer: Buffer, options: ParserOptions): Promise<
     }
 
     const clients = Array.from(clientsMap.values());
-    const extractedRecords = clients.length;
+    const extractedRecords = clients.reduce((total, client) => total + client.occurrences, 0);
 
     if (clients.length === 0) {
       warnings.push('Nenhum cliente válido encontrado na coluna identificada.');

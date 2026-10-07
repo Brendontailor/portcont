@@ -94,6 +94,7 @@ HWTC22222222
     const client = result.clients.find(c => c.normalizedName === 'BRUNA MELLO ASSIS');
     expect(client).toBeDefined();
     expect(client!.occurrences).toBe(2);
+    expect(result.extractedRecords).toBe(2);
   });
 
   it('should ignore UI headers and pagination', () => {

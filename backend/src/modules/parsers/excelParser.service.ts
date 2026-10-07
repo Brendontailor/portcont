@@ -195,7 +195,7 @@ export async function parseExcel(buffer: Buffer, options: ParserOptions): Promis
     }
 
     const clients = Array.from(clientsMap.values());
-    const extractedRecords = clients.length;
+    const extractedRecords = clients.reduce((total, client) => total + client.occurrences, 0);
 
     if (clients.length === 0) {
       warnings.push('Nenhum cliente válido encontrado na coluna identificada.');

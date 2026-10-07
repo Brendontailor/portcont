@@ -26,6 +26,9 @@ export default function ConferenceReport({ comparison: c, onReview, reviewing, o
   const pages = Math.max(1, Math.ceil(rows.length / 25));
   const current = Math.min(page, pages);
   const differences = c.entries.filter(e => e.originalA != null && e.originalB != null && e.occurrencesA !== e.occurrencesB).length;
+  const comparisonClients = c.clients ?? [];
+  const recordsA = comparisonClients.filter(client => client.side === 'A').reduce((total, client) => total + client.occurrences, 0);
+  const recordsB = comparisonClients.filter(client => client.side === 'B').reduce((total, client) => total + client.occurrences, 0);
   return <section className={styles.report} aria-labelledby="report-title">
     <header className={styles.header}>
       <div><p className={styles.eyebrow}>Relatório de conferência · {String(c.period.month).padStart(2, '0')}/{c.period.year}</p>
@@ -33,7 +36,7 @@ export default function ConferenceReport({ comparison: c, onReview, reviewing, o
       <div className={styles.actions}><a className="btn btn-secondary" href="/">Nova conferência</a>
         <button className="btn btn-primary" disabled={exporting || reviewing} onClick={async () => { setExporting(true); try { await onExport(); } finally { setExporting(false); } }}>{exporting ? 'Preparando Excel…' : 'Baixar relatório completo'}</button></div>
     </header>
-    <div className={styles.sources}><div><strong>Base A · Nossa lista · {c.totalA.toLocaleString('pt-BR')} clientes</strong><span>{c.fileAName}</span></div><div><strong>Base B · Lista informada pela parceira · {c.totalB.toLocaleString('pt-BR')} clientes</strong><span>{c.fileBName}</span></div></div>
+    <div className={styles.sources}><div><strong>Base A · Nossa lista · {c.totalA.toLocaleString('pt-BR')} clientes únicos</strong><span>{recordsA.toLocaleString('pt-BR')} registros lidos · {c.fileAName}</span></div><div><strong>Base B · Lista informada pela parceira · {c.totalB.toLocaleString('pt-BR')} clientes únicos</strong><span>{recordsB.toLocaleString('pt-BR')} registros lidos · {c.fileBName}</span></div></div>
     {(c.incompleteA || c.incompleteB) && <p className={styles.warning} role="alert">Atenção: a extração da base {c.incompleteA && c.incompleteB ? 'A e da base B' : c.incompleteA ? 'A' : 'B'} pode estar incompleta. Confira os arquivos originais antes de concluir.</p>}
     <div className={styles.metrics}>
       {([['MATCHED', c.matchedCount], ['ONLY_A', c.onlyACount], ['ONLY_B', c.onlyBCount], ['REVIEW', c.reviewCount]] as const).map(([key, count]) => <button key={key} aria-pressed={status === key} onClick={() => { setStatus(key); setPage(1); }}><strong>{count.toLocaleString('pt-BR')}</strong><span>{labels[key]}</span></button>)}
@@ -50,6 +53,6 @@ export default function ConferenceReport({ comparison: c, onReview, reviewing, o
       {!rows.length && <tr><td colSpan={6}><p>Nenhum registro para estes filtros.</p><button className="btn btn-secondary" onClick={() => { setQuery(''); setStatus('ALL'); setDifferent(false); setPage(1); }}>Limpar filtros</button></td></tr>}
     </tbody></table></div>
     <footer className={styles.footer}><span role="status">{reviewing ? 'Salvando revisão…' : `Exibindo ${rows.length ? (current - 1) * 25 + 1 : 0}–${Math.min(current * 25, rows.length)} de ${rows.length}`}</span><div className={styles.actions}><button className="btn btn-secondary" disabled={current === 1} onClick={() => setPage(current - 1)}>Anterior</button><button className="btn btn-secondary" disabled={current === pages} onClick={() => setPage(current + 1)}>Próxima</button></div></footer>
-    <details className={styles.details}><summary>Detalhes dos arquivos e critérios</summary><p>Identificador: {c.id}</p><p>Base A é a nossa relação de clientes registrados na parceira. Base B é a relação que a parceira informa. Registros declarados: A {c.declaredA ?? 'não informado'} · B {c.declaredB ?? 'não informado'}. Os totais representam nomes normalizados únicos; ocorrências preservam repetições.</p><p>“Só na lista da parceira” destaca clientes que podem estar sendo cobrados sem constarem na nossa relação. Confirme cada diferença com os arquivos originais antes de concluir.</p></details>
+    <details className={styles.details}><summary>Detalhes dos arquivos e critérios</summary><p>Identificador: {c.id}</p><p>Base A é a nossa relação de clientes registrados na parceira. Base B é a relação que a parceira informa. Os números de clientes únicos deduplicam nomes repetidos; registros lidos contam todas as ocorrências encontradas no arquivo. Registros declarados no documento: A {c.declaredA ?? 'não informado'} · B {c.declaredB ?? 'não informado'}.</p><p>“Só na lista da parceira” destaca clientes que podem estar sendo cobrados sem constarem na nossa relação. Confirme cada diferença com os arquivos originais antes de concluir.</p></details>
   </section>;
 }

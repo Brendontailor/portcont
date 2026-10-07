@@ -158,7 +158,7 @@ export function extractClientsFromPdfText(fullText: string): ParseResult {
   flushBuffer();
 
   const clients = Array.from(clientsMap.values());
-  const extractedRecords = clients.length;
+  const extractedRecords = clients.reduce((total, client) => total + client.occurrences, 0);
   const possiblyIncomplete = declaredRecords !== undefined && extractedRecords < declaredRecords;
 
   if (possiblyIncomplete) {
