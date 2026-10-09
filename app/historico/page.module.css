@@ -132,6 +132,27 @@
   border-radius: var(--radius-lg);
 }
 
+.tableWrapper :global(.table) {
+  min-width: 1240px;
+}
+
+.deleteBtn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: #667085;
+  transition: color var(--transition), border-color var(--transition), background-color var(--transition);
+}
+
+.deleteBtn svg { width: 17px; height: 17px; }
+.deleteBtn:hover:not(:disabled) { color: var(--color-danger); border-color: #e5b8b8; background: #fff7f7; }
+.deleteBtn:disabled { opacity: .55; cursor: wait; }
+.deleteBtn:focus-visible { outline: 3px solid rgba(44, 102, 158, .35); outline-offset: 2px; }
+
 .pagination {
   display: flex;
   align-items: center;

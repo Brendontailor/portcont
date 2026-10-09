@@ -16,6 +16,7 @@ export default function HistoricoPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const limit = 20;
 
   const loadComparisons = useCallback(async () => {
@@ -37,6 +38,27 @@ export default function HistoricoPage() {
   useEffect(() => {
     loadComparisons();
   }, [loadComparisons]);
+
+  const handleDelete = async (comparison: Comparison) => {
+    const period = `${comparison.period.month.toString().padStart(2, '0')}/${comparison.period.year}`;
+    const description = `${comparison.period.partner.name} · ${period} · ${comparison.title || 'Conferência de clientes'}`;
+    if (!window.confirm(`Excluir esta comparação?\n${description}\n\nEsta ação não pode ser desfeita.`)) return;
+
+    setDeletingId(comparison.id);
+    setError(null);
+    try {
+      await api.comparisons.delete(comparison.id);
+      if (comparisons.length === 1 && page > 1) {
+        setPage(currentPage => currentPage - 1);
+      } else {
+        await loadComparisons();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir comparação');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -93,6 +115,7 @@ export default function HistoricoPage() {
                       <th scope="col">Somente A</th>
                       <th scope="col">Somente B</th>
                       <th scope="col">Revisar</th>
+                      <th scope="col">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -110,6 +133,18 @@ export default function HistoricoPage() {
                         <td><span className={styles.badgeWarning}>{comp.onlyACount.toLocaleString('pt-BR')}</span></td>
                         <td><span className={styles.badgeInfo}>{comp.onlyBCount.toLocaleString('pt-BR')}</span></td>
                         <td><span className={styles.badgeDanger}>{comp.reviewCount.toLocaleString('pt-BR')}</span></td>
+                        <td>
+                          <button
+                            type="button"
+                            className={styles.deleteBtn}
+                            onClick={() => handleDelete(comp)}
+                            disabled={deletingId !== null}
+                            aria-label={`Excluir comparação de ${comp.period.partner.name}, ${comp.period.month.toString().padStart(2, '0')}/${comp.period.year}`}
+                            title="Excluir comparação"
+                          >
+                            {deletingId === comp.id ? 'Excluindo…' : <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg>}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
