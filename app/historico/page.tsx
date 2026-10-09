@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
 import { api } from '@/services/api';
 import type { PaginatedComparisons, Comparison } from '@/types';
 import { formatDateTime, formatFileSize } from '@/utils/helpers';
@@ -61,7 +60,6 @@ export default function HistoricoPage() {
 
   return (
     <div className={styles.page}>
-      <Header />
       <main className={styles.main}>
         <div className={styles.container}>
           <header className={styles.header}>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Header from '@/components/Header';
 import { api } from '@/services/api';
 import type { Partner } from '@/types';
 import { formatDateTime } from '@/utils/helpers';
@@ -90,7 +89,6 @@ export default function ParceirasPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <Header />
         <main className={styles.main}>
           <div className={styles.container}>
             <div className={styles.loading}>
@@ -105,7 +103,6 @@ export default function ParceirasPage() {
 
   return (
     <div className={styles.page}>
-      <Header />
       <main className={styles.main}>
         <div className={styles.container}>
           <header className={styles.header}>

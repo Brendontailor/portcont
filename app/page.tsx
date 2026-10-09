@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import ConferenceReport from '@/components/ConferenceReport';
-import Header from '@/components/Header';
 import FileUploader from '@/components/FileUploader';
 import WarningBanner from '@/components/WarningBanner';
 import { api } from '@/services/api';
@@ -24,6 +24,8 @@ const ACCEPTED_TYPES = [
 const MAX_SIZE_MB = 15;
 
 export default function HomePage() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [filesA, setFilesA] = useState<File[]>([]);
   const [filesB, setFilesB] = useState<File[]>([]);
   const [partners, setPartners] = useState<Array<{ id: string; name: string; slug: string }>>([]);
@@ -39,28 +41,32 @@ export default function HomePage() {
   const [reviewEntry, setReviewEntry] = useState<ComparisonEntry | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const initializedRef = useRef(false);
 
   const loadPartners = useCallback(async () => {
     try {
       const data = await api.partners.list(true);
       setPartners(data);
-      const params = new URLSearchParams(window.location.search);
-      const requestedPartner = params.get('partner');
-      const year = Number(params.get('year'));
-      const month = Number(params.get('month'));
-
-      if (Number.isInteger(year) && Number.isInteger(month) && month >= 1 && month <= 12) {
-        setSelectedPeriod({ year, month });
-      }
-
-      setSelectedPartnerId(current => {
-        if (current) return current;
-        return data.some(item => item.id === requestedPartner) ? requestedPartner! : data[0]?.id || '';
-      });
     } catch {
       setError('Erro ao carregar parceiras');
     }
   }, []);
+
+  const initializeFromUrl = useCallback(() => {
+    const requestedPartner = searchParams?.get('partner');
+    const year = Number(searchParams?.get('year'));
+    const month = Number(searchParams?.get('month'));
+
+    if (requestedPartner && partners.some(p => p.id === requestedPartner)) {
+      setSelectedPartnerId(requestedPartner);
+    } else if (!selectedPartnerId && partners[0]?.id) {
+      setSelectedPartnerId(partners[0].id);
+    }
+
+    if (Number.isInteger(year) && Number.isInteger(month) && month >= 1 && month <= 12) {
+      setSelectedPeriod({ year, month });
+    }
+  }, [partners, selectedPartnerId, searchParams]);
 
   const loadPeriods = useCallback(async (partnerId: string) => {
     const request = ++periodRequest.current;
@@ -92,13 +98,20 @@ export default function HomePage() {
   }, [loadPartners]);
 
   useEffect(() => {
+    if (!initializedRef.current && partners.length > 0) {
+      initializedRef.current = true;
+      initializeFromUrl();
+    }
+  }, [partners, initializeFromUrl]);
+
+  useEffect(() => {
     if (selectedPartnerId) {
       loadPeriods(selectedPartnerId);
     }
   }, [selectedPartnerId, loadPeriods]);
 
   useEffect(() => {
-    const comparisonId = new URLSearchParams(window.location.search).get('comparison');
+    const comparisonId = searchParams?.get('comparison');
     if (!comparisonId) return;
 
     setLoading(true);
@@ -106,7 +119,7 @@ export default function HomePage() {
       .then(setComparison)
       .catch(err => setError(err instanceof Error ? err.message : 'Erro ao carregar comparação'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [searchParams]);
 
   const updatePeriod = (values: { year?: number; month?: number }) => {
     setSelectedPeriod(current => {
@@ -179,7 +192,6 @@ export default function HomePage() {
   if (!comparison) {
     return (
       <div className={styles.page}>
-        <Header />
         <main className={styles.main}>
           <div className={styles.container}>
             <header className={styles.pageHeader}>
@@ -324,7 +336,6 @@ export default function HomePage() {
 
   return (
     <div className={styles.page}>
-      <Header />
       <main className={styles.main}><div className={styles.container}>
         {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
         {warnings.map((message, i) => <WarningBanner key={i} message={message} type="warning" />)}

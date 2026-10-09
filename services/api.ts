@@ -5,12 +5,22 @@ export class ApiError extends Error {
   }
 }
 
+import { getCached, setCache, invalidateCachePrefix, CACHE_KEYS } from '@/utils/cache';
+
 async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> {
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = new Headers(options.headers);
 
   if (!isFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
+  }
+
+  const isGetRequest = !options.method || options.method === 'GET';
+  const cacheKey = isGetRequest ? path : null;
+
+  if (cacheKey) {
+    const cached = getCached<T>(cacheKey);
+    if (cached) return cached;
   }
 
   const res = await fetch(path, {
@@ -31,7 +41,14 @@ async function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> 
   }
 
   if (res.status === 204) return undefined as T;
-  return res.json();
+
+  const data = await res.json();
+
+  if (cacheKey) {
+    setCache(cacheKey, data);
+  }
+
+  return data;
 }
 
 async function fetchBlob(path: string): Promise<Blob> {
@@ -69,15 +86,15 @@ export const api = {
   partners: {
     list: (activeOnly = true) => fetchApi<import('../types').Partner[]>(`/api/partners?active=${activeOnly}`),
     get: (id: string) => fetchApi<import('../types').Partner>(`/api/partners/${id}`),
-    create: (name: string) => fetchApi<import('../types').Partner>('/api/partners', { method: 'POST', body: JSON.stringify({ name }) }),
-    update: (id: string, data: { name?: string; active?: boolean }) => fetchApi<import('../types').Partner>(`/api/partners/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    delete: (id: string) => fetchApi<void>(`/api/partners/${id}`, { method: 'DELETE' }),
+    create: (name: string) => fetchApi<import('../types').Partner>('/api/partners', { method: 'POST', body: JSON.stringify({ name }) }).then(data => { invalidateCachePrefix('partners:'); return data; }),
+    update: (id: string, data: { name?: string; active?: boolean }) => fetchApi<import('../types').Partner>(`/api/partners/${id}`, { method: 'PATCH', body: JSON.stringify(data) }).then(data => { invalidateCachePrefix('partners:'); return data; }),
+    delete: (id: string) => fetchApi<void>(`/api/partners/${id}`, { method: 'DELETE' }).then(() => { invalidateCachePrefix('partners:'); }),
   },
 
   periods: {
     list: (partnerId: string) => fetchApi<import('../types').PartnerPeriod[]>(`/api/periods/${partnerId}`),
     get: (partnerId: string, year: number, month: number) => fetchApi<import('../types').PartnerPeriod>(`/api/periods/${partnerId}/${year}/${month}`),
-    create: (partnerId: string, year: number, month: number) => fetchApi<import('../types').PartnerPeriod>(`/api/periods/${partnerId}/${year}/${month}`, { method: 'POST' }),
+    create: (partnerId: string, year: number, month: number) => fetchApi<import('../types').PartnerPeriod>(`/api/periods/${partnerId}/${year}/${month}`, { method: 'POST' }).then(data => { invalidateCachePrefix(`periods:${partnerId}`); return data; }),
   },
 
   comparisons: {
@@ -96,14 +113,14 @@ export const api = {
       return fetchApi<{ comparison: import('../types').Comparison; warnings: string[] }>('/api/comparisons', {
         method: 'POST',
         body: formData,
-      });
+      }).then(data => { invalidateCachePrefix('comparisons:'); return data; });
     },
     review: (comparisonId: string, entryId: string, samePerson: boolean) =>
       fetchApi<import('../types').Comparison>(`/api/comparisons/${comparisonId}/review/${entryId}`, {
         method: 'POST',
         body: JSON.stringify({ samePerson }),
-      }),
-    delete: (id: string) => fetchApi<void>(`/api/comparisons/${id}`, { method: 'DELETE' }),
+      }).then(data => { invalidateCachePrefix('comparisons:'); return data; }),
+    delete: (id: string) => fetchApi<void>(`/api/comparisons/${id}`, { method: 'DELETE' }).then(() => { invalidateCachePrefix('comparisons:'); }),
     supportedFormats: () => fetchApi<{ mimeTypes: string[] }>('/api/comparisons/supported-formats'),
   },
 
