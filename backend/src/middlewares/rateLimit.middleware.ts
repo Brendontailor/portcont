@@ -11,7 +11,7 @@ export const rateLimiter = rateLimit({
 
 export const strictRateLimiter = rateLimit({
   windowMs: 60000,
-  max: 10,
+  max: 60,
   message: { error: 'Muitas tentativas. Aguarde um minuto.' },
   standardHeaders: true,
   legacyHeaders: false,

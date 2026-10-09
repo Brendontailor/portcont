@@ -16,7 +16,10 @@ const TECHNICAL_PATTERNS = [
   /^([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}$/i,
   /^https?:\/\//i,
   /^\d+$/,
-  /^[A-Z0-9]{12,}$/i,
+  // Long technical identifiers must contain at least one digit, otherwise
+  // single-word family names with 12+ letters (ex.: "TUCHTENHAGEN") would be
+  // discarded as serial numbers.
+  /^(?=.*\d)[A-Z0-9]{12,}$/i,
 ];
 
 const IGNORE_LINES = [
@@ -44,6 +47,32 @@ const PREFIXES_TO_REMOVE = [
   /^RGSUL\s*-/i,
   /^REDE\s+RGSUL\s*-/i,
 ];
+
+// SmartOLT sometimes glues the ONU serial directly onto the customer's name
+// (ex.: "CARMEN REGINAZTEGD088FCE4", "LUIZA MIRANDA BOHNSHWTCF0D851B5").
+// The serial tail must contain at least one digit so plain words that merely
+// start with a prefix (ex.: "MONUMENTAL") are never touched.
+const ATTACHED_SERIAL_PATTERN = /([\p{L}])(?:HWTC|FHTT|ZTEG|ITBS|DD18|MONU|UBNT)(?=[A-Z0-9]*\d)[A-Z0-9]{6,}\b/giu;
+
+// Some SmartOLT fonts export names with a space between every glyph and two
+// or more spaces between words (ex.: "TA I N A   A LV E S   DA   S I LVA").
+// Glue each group of 1-2 letter fragments back into a word. Lines with only
+// single spaces (normal names) are returned untouched.
+function collapseSpacedLetters(text: string): string {
+  const groups = text.split(/ {2,}/).map(group => group.trim()).filter(group => group.length > 0);
+  if (groups.length < 2) return text;
+  const rebuilt = groups.map(group => {
+    const fragments = group.split(' ');
+    if (fragments.length < 2) return group;
+    // Fonts without Unicode mapping split each glyph into 1-3 letter pieces.
+    const averageLength = fragments.reduce((sum, fragment) => sum + fragment.length, 0) / fragments.length;
+    const isSpacedWord = fragments.length >= 3
+      ? averageLength <= 2
+      : fragments.every(fragment => fragment.length <= 2);
+    return isSpacedWord ? fragments.join('') : group;
+  });
+  return rebuilt.join(' ');
+}
 
 function isTechnicalIdentifier(text: string): boolean {
   const trimmed = text.trim();
@@ -87,12 +116,18 @@ function cleanLine(line: string): string {
   for (const pattern of TECHNICAL_PATTERNS) {
     cleaned = cleaned.replace(pattern, ' ');
   }
-  cleaned = cleaned.replace(/\b(?:HWTC|FHTT|ZTEG|ITBS|DD18|MONU|UBNT)[A-Z0-9]{6,}\b/gi, ' ');
+  // Serial glued to the end of a name without whitespace: keep the name's
+  // last letter, drop the serial (digit requirement protects real words).
+  cleaned = cleaned.replace(ATTACHED_SERIAL_PATTERN, '$1');
+  // Serial as a standalone token. The tail must contain a digit so words
+  // beginning with a vendor prefix (ex.: "MONUMENTAL") are kept intact.
+  cleaned = cleaned.replace(/\b(?:HWTC|FHTT|ZTEG|ITBS|DD18|MONU|UBNT)(?=[A-Z0-9]*\d)[A-Z0-9]{6,}\b/gi, ' ');
   // PDFs from SmartOLT can concatenate toolbar labels into one text line.
   cleaned = cleaned.replace(/\b(?:mais\s*filtros|importar\s*\/\s*exportar|exportar|pesquisar|status|visualizar|nome|sn\s*\/\s*mac|sn\s+mac|tipo\s+onu|tipo\s+pon|perfil|setor|porta|placa|zona|cto|vlan)\b/gi, ' ');
   cleaned = cleaned.replace(/\b\d+\s*[-–—]\s*olt[a-z0-9_-]*\b/gi, ' ');
   cleaned = cleaned.replace(/\b(?:qu\.{2,}|qualquer)\b/gi, ' ');
-  return normalizeWhitespace(cleaned.replace(/[^\p{L}\p{N}\s\-'.]/gu, '').trim());
+  const filtered = cleaned.replace(/[^\p{L}\p{N}\s\-'.]/gu, '');
+  return normalizeWhitespace(collapseSpacedLetters(filtered));
 }
 
 function isLikelyName(text: string): boolean {

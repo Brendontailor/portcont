@@ -192,6 +192,67 @@ Visualizar (/onu/view/101) MARIA SANTOS
     expect(result.possiblyIncomplete).toBe(false);
   });
 
+  it('strips serial glued to the end of the name without whitespace', () => {
+    const text = `
+1-3 ONUs de 3 exibidas
+Visualizar (/onu/view/1006) CARMEN REGINAZTEGD088FCE4
+(/onu/view/1006)
+Visualizar (/onu/view/862) MARCIA GOMES COELHOITBS2C7CCE3F
+(/onu/view/862)
+Visualizar (/onu/view/66) eberson bierci ferrazFHTT04AB6CB8
+(/onu/view/66)
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.map(client => client.normalizedName)).toEqual([
+      'CARMEN REGINA',
+      'MARCIA GOMES COELHO',
+      'EBERSON BIERCI FERRAZ',
+    ]);
+    expect(result.extractedRecords).toBe(3);
+  });
+
+  it('does not strip words that start with a vendor prefix but contain no digits', () => {
+    const text = `
+Visualizar (/onu/view/1) MONUMENTAL CONSTRUTORA
+(/onu/view/1)
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.map(client => client.normalizedName)).toEqual(['MONUMENTAL CONSTRUTORA']);
+  });
+
+  it('keeps long single-word surnames that have no digits', () => {
+    const text = `
+Visualizar (/onu/view/1565)
+JOSE PAULO
+TUCHTENHAGEN
+BARBOSA
+FHTT09DB6874
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.map(client => client.normalizedName)).toEqual(['JOSE PAULO TUCHTENHAGEN BARBOSA']);
+  });
+
+  it('rebuilds names exported with a space between every letter', () => {
+    const text = `
+1-2 ONUs de 2 exibidas
+Visualizar (/onu/view/2259)
+TA I N A   A LV E S   DA   S I LVAHWTC7E7FA5B1
+(/onu/view/2259)
+Visualizar (/onu/view/2196)
+FA B I E L E   D E   S O U Z A
+PORTO
+HWTC7E815BB1
+(/onu/view/2196)
+`;
+    const result = extractClientsFromPdfText(text);
+    expect(result.clients.map(client => client.normalizedName)).toEqual([
+      'TAINA ALVES DA SILVA',
+      'FABIELE DE SOUZA PORTO',
+    ]);
+    expect(result.extractedRecords).toBe(2);
+    expect(result.possiblyIncomplete).toBe(false);
+  });
+
   it('should reject invalid PDF binary with friendly error', async () => {
     const buffer = Buffer.from('isto nao e um pdf valido');
     await expect(parsePDF(buffer, { fileName: 'test.pdf', mimeType: 'application/pdf' }))
