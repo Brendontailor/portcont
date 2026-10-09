@@ -200,3 +200,14 @@
     font-size: 12px;
   }
 }
+
+/* Identidade PortCont: simbolo reconhecivel em tamanhos pequenos. */
+.brandLine { display: inline-flex; align-items: center; gap: 9px; }
+.logoMark { width: 36px; height: 36px; display: block; flex: 0 0 36px; }
+.brandName { font-size: 21px; font-weight: 800; line-height: 1; letter-spacing: -.7px; color: #10234a; }
+.brandAccent { color: #1769d2; }
+@media (max-width: 560px) {
+  .logoMark { width: 28px; height: 28px; flex-basis: 28px; }
+  .brandLine { gap: 5px; }
+  .brandName { font-size: 16px; letter-spacing: -.5px; }
+}

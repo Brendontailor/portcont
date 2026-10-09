@@ -7,11 +7,62 @@ import * as repo from './comparisons.repository.js';
 import { AppError } from '../../middlewares/error.middleware.js';
 import type { ComparisonResult, ParsedClient } from '../matching/matching.types.js';
 
+async function parseAndMergeFiles(files: Express.Multer.File[], sideLabel: string) {
+  const allClients: ParsedClient[] = [];
+  let totalDeclaredRecords = 0;
+  let totalExtractedRecords = 0;
+  let possiblyIncomplete = false;
+  const allWarnings: string[] = [];
+  const sourceFiles: { originalName: string; mimeType: string; size: number; buffer: Buffer; declaredRecords: number | undefined; extractedRecords: number }[] = [];
+
+  for (const file of files) {
+    const parseResult = await parseFile(file.buffer, { fileName: file.originalname, mimeType: file.mimetype });
+    allWarnings.push(...parseResult.warnings.map(w => `[${file.originalname}] ${w}`));
+    
+    if (parseResult.clients.length === 0) {
+      throw new AppError(400, `Não foi possível identificar clientes no arquivo ${file.originalname} (lado ${sideLabel}).`);
+    }
+
+    allClients.push(...parseResult.clients);
+    totalDeclaredRecords += parseResult.declaredRecords ?? 0;
+    totalExtractedRecords += parseResult.extractedRecords;
+    possiblyIncomplete = possiblyIncomplete || parseResult.possiblyIncomplete;
+    sourceFiles.push({
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      buffer: file.buffer,
+      declaredRecords: parseResult.declaredRecords,
+      extractedRecords: parseResult.extractedRecords,
+    });
+  }
+
+  // Deduplicar clientes consolidados por normalizedName
+  const mergedMap = new Map<string, ParsedClient>();
+  for (const client of allClients) {
+    const existing = mergedMap.get(client.normalizedName);
+    if (existing) {
+      existing.occurrences += client.occurrences;
+    } else {
+      mergedMap.set(client.normalizedName, { ...client });
+    }
+  }
+
+  return {
+    clients: Array.from(mergedMap.values()),
+    warnings: allWarnings,
+    declaredRecords: totalDeclaredRecords || undefined,
+    extractedRecords: totalExtractedRecords,
+    possiblyIncomplete,
+    sourceFiles,
+  };
+}
+
 export async function processComparison(
   periodId: string,
   title: string | undefined,
-  fileA: Express.Multer.File,
-  fileB: Express.Multer.File
+  filesA: Express.Multer.File[],
+  filesB: Express.Multer.File[]
 ) {
   const period = await prisma.partnerPeriod.findUnique({
     where: { id: periodId },
@@ -20,45 +71,54 @@ export async function processComparison(
   if (!period) throw new AppError(404, 'Competência não encontrada');
   if (!period.partner.active) throw new AppError(400, 'Parceira está inativa');
 
-  const [parseResultA, parseResultB] = await Promise.all([
-    parseFile(fileA.buffer, { fileName: fileA.originalname, mimeType: fileA.mimetype }),
-    parseFile(fileB.buffer, { fileName: fileB.originalname, mimeType: fileB.mimetype }),
+  const [mergeA, mergeB] = await Promise.all([
+    parseAndMergeFiles(filesA, 'A'),
+    parseAndMergeFiles(filesB, 'B'),
   ]);
 
-  const allWarnings = [...parseResultA.warnings, ...parseResultB.warnings];
+  const allWarnings = [...mergeA.warnings, ...mergeB.warnings];
 
-  if (parseResultA.clients.length === 0 || parseResultB.clients.length === 0) {
-    if (parseResultA.clients.length === 0 && parseResultB.clients.length === 0) {
-      throw new AppError(400, 'Não foi possível identificar clientes nos dois arquivos enviados.');
-    }
-    throw new AppError(400, parseResultA.clients.length === 0
-      ? 'Não foi possível identificar clientes no arquivo A.'
-      : 'Não foi possível identificar clientes no arquivo B.');
-  }
-
-  const [uploadA, uploadB] = await Promise.all([
-    uploadFile(fileA.buffer, fileA.originalname, fileA.mimetype),
-    uploadFile(fileB.buffer, fileB.originalname, fileB.mimetype),
+  const [uploadAResults, uploadBResults] = await Promise.all([
+    Promise.all(mergeA.sourceFiles.map(f => uploadFile(f.buffer, f.originalName, f.mimeType))),
+    Promise.all(mergeB.sourceFiles.map(f => uploadFile(f.buffer, f.originalName, f.mimeType))),
   ]);
 
-  const result = await compareBases(parseResultA.clients, parseResultB.clients);
+  const result = await compareBases(mergeA.clients, mergeB.clients);
 
   const comparison = await saveComparison(
     periodId,
     title,
-    fileA.originalname,
-    fileB.originalname,
+    mergeA.sourceFiles.map(f => f.originalName).join(', '),
+    mergeB.sourceFiles.map(f => f.originalName).join(', '),
     result,
-    parseResultA.declaredRecords,
-    parseResultB.declaredRecords,
-    parseResultA.possiblyIncomplete,
-    parseResultB.possiblyIncomplete,
+    mergeA.declaredRecords,
+    mergeB.declaredRecords,
+    mergeA.possiblyIncomplete,
+    mergeB.possiblyIncomplete,
     [
-      { side: 'A', originalName: fileA.originalname, storageKey: uploadA?.key, storageUrl: uploadA?.url, mimeType: fileA.mimetype, size: fileA.size, declaredRecords: parseResultA.declaredRecords, extractedRecords: parseResultA.extractedRecords },
-      { side: 'B', originalName: fileB.originalname, storageKey: uploadB?.key, storageUrl: uploadB?.url, mimeType: fileB.mimetype, size: fileB.size, declaredRecords: parseResultB.declaredRecords, extractedRecords: parseResultB.extractedRecords },
+      ...mergeA.sourceFiles.map((f, i) => ({
+        side: 'A' as const,
+        originalName: f.originalName,
+        storageKey: uploadAResults[i]?.key,
+        storageUrl: uploadAResults[i]?.url,
+        mimeType: f.mimeType,
+        size: f.size,
+        declaredRecords: f.declaredRecords,
+        extractedRecords: f.extractedRecords,
+      })),
+      ...mergeB.sourceFiles.map((f, i) => ({
+        side: 'B' as const,
+        originalName: f.originalName,
+        storageKey: uploadBResults[i]?.key,
+        storageUrl: uploadBResults[i]?.url,
+        mimeType: f.mimeType,
+        size: f.size,
+        declaredRecords: f.declaredRecords,
+        extractedRecords: f.extractedRecords,
+      })),
     ],
-    parseResultA.clients,
-    parseResultB.clients
+    mergeA.clients,
+    mergeB.clients
   );
 
   return { comparison, warnings: allWarnings };

@@ -30,6 +30,15 @@
   background: var(--color-info-light);
 }
 
+.fileCounter {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+  background: var(--color-bg);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
 .label span {
   font-size: 13px;
   font-weight: 500;
@@ -198,4 +207,82 @@
   font-size: 12px;
   color: var(--color-danger);
   margin: 0;
+}
+
+.filesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  pointer-events: auto;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.fileItem .fileIcon {
+  width: 32px;
+  height: 32px;
+}
+
+.fileItem .fileIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fileItem .fileDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileItem .fileName {
+  font-size: 12px;
+}
+
+.fileItem .fileMeta {
+  font-size: 11px;
+}
+
+.clearAllBtn {
+  align-self: flex-start;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-danger);
+  background: var(--color-danger-light);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition);
+}
+
+.clearAllBtn:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: white;
+}
+
+.clearAllBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dropzone.maxFiles {
+  opacity: 0.7;
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+.dropzone.hasFiles {
+  border-style: solid;
+  border-color: var(--color-success);
+  background-color: var(--color-success-light);
 }

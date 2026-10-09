@@ -87,10 +87,10 @@ export const api = {
       return fetchApi<import('../types').PaginatedComparisons>(`/api/comparisons?${params}`);
     },
     get: (id: string) => fetchApi<import('../types').Comparison>(`/api/comparisons/${id}`),
-    create: (periodId: string, title: string | undefined, fileA: File, fileB: File) => {
+    create: (periodId: string, title: string | undefined, filesA: File[], filesB: File[]) => {
       const formData = new FormData();
-      formData.append('fileA', fileA);
-      formData.append('fileB', fileB);
+      filesA.forEach(f => formData.append('fileA', f));
+      filesB.forEach(f => formData.append('fileB', f));
       formData.append('periodId', periodId);
       if (title) formData.append('title', title);
       return fetchApi<{ comparison: import('../types').Comparison; warnings: string[] }>('/api/comparisons', {

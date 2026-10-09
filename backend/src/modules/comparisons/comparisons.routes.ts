@@ -31,7 +31,7 @@ router.post('/', uploadComparison, async (req, res, next) => {
   try {
     const files = req.files as { fileA?: Express.Multer.File[]; fileB?: Express.Multer.File[] } | undefined;
     if (!files?.fileA?.[0] || !files?.fileB?.[0]) {
-      throw new AppError(400, 'É necessário enviar exatamente 2 arquivos (fileA e fileB)');
+      throw new AppError(400, 'É necessário enviar pelo menos 1 arquivo para cada lado (fileA e fileB)');
     }
 
     const periodId = req.body.periodId;
@@ -44,8 +44,8 @@ router.post('/', uploadComparison, async (req, res, next) => {
     const { comparison, warnings } = await service.processComparison(
       periodId,
       typeof title === 'string' && title.trim() ? title.trim() : undefined,
-      files.fileA[0],
-      files.fileB[0]
+      files.fileA,
+      files.fileB
     );
 
     res.status(201).json({ comparison, warnings });

@@ -31,11 +31,11 @@ export const upload = multer({
   fileFilter,
   limits: {
     fileSize: env.MAX_UPLOAD_MB * 1024 * 1024,
-    files: 2,
+    files: 10,
   },
 });
 
 export const uploadComparison = upload.fields([
-  { name: 'fileA', maxCount: 1 },
-  { name: 'fileB', maxCount: 1 },
+  { name: 'fileA', maxCount: 5 },
+  { name: 'fileB', maxCount: 10 },
 ]);

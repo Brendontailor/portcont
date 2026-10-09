@@ -1,8 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PortCont, duas bases conferidas">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 82" role="img" aria-label="PORTCONT">
+<svg x="5" y="9" width="64" height="64" viewBox="0 0 64 64">
 <path d="M5 13Q5 9 10 10L26 14V53L10 49Q5 48 5 43Z" fill="#102D65"/>
 <path d="M59 13Q59 9 54 10L38 14V53L54 49Q59 48 59 43Z" fill="#1769D2"/>
 <g stroke="#BBD7FF" stroke-width="3" stroke-linecap="round"><path d="M11 23h10M11 31h10M11 39h10"/></g>
 <g stroke="#E3F2FF" stroke-width="3" stroke-linecap="round"><path d="M43 23h10M43 31h10M43 39h10"/></g>
 <circle cx="32" cy="33" r="15" fill="#FFFFFF"/><circle cx="32" cy="33" r="12" fill="#1365DC"/>
 <path d="m26 33 4 4 8-9" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+<text x="82" y="54" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="43" letter-spacing="-1.7" fill="#0F234B">PORT<tspan fill="#1769D2">CONT</tspan></text>
 </svg>

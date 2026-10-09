@@ -24,8 +24,8 @@ const ACCEPTED_TYPES = [
 const MAX_SIZE_MB = 15;
 
 export default function HomePage() {
-  const [fileA, setFileA] = useState<File | null>(null);
-  const [fileB, setFileB] = useState<File | null>(null);
+  const [filesA, setFilesA] = useState<File[]>([]);
+  const [filesB, setFilesB] = useState<File[]>([]);
   const [partners, setPartners] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [selectedPeriod, setSelectedPeriod] = useState<{ year: number; month: number; id?: string } | null>(null);
@@ -118,8 +118,8 @@ export default function HomePage() {
   };
 
   const handleCompare = async () => {
-    if (loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod) {
-      setError('Selecione a parceira, competência e ambos os arquivos');
+    if (loading || loadingPeriods || filesA.length === 0 || filesB.length === 0 || !selectedPartnerId || !selectedPeriod) {
+      setError('Selecione a parceira, competência e pelo menos um arquivo para cada lado');
       return;
     }
 
@@ -136,12 +136,12 @@ export default function HomePage() {
       const result = await api.comparisons.create(
         periodId,
         comparisonTitle || undefined,
-        fileA,
-        fileB
+        filesA,
+        filesB
       );
 
       setWarnings(result.warnings);
-        setComparison(result.comparison);
+      setComparison(result.comparison);
       window.history.replaceState(null, '', `/?comparison=${result.comparison.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao processar comparação');
@@ -274,18 +274,20 @@ export default function HomePage() {
                   label="BASE A"
                   context="Nossa lista"
                   side="A"
-                  onFileSelect={(_, file) => setFileA(file)}
+                  onFileSelect={(_, files) => setFilesA(files)}
                   acceptedTypes={ACCEPTED_TYPES}
                   maxSizeMB={MAX_SIZE_MB}
+                  maxFiles={5}
                   disabled={loading}
                 />
                 <FileUploader
                   label="BASE B"
-                  context="Lista da parceira"
+                  context="Lista(s) da parceira"
                   side="B"
-                  onFileSelect={(_, file) => setFileB(file)}
+                  onFileSelect={(_, files) => setFilesB(files)}
                   acceptedTypes={ACCEPTED_TYPES}
                   maxSizeMB={MAX_SIZE_MB}
+                  maxFiles={10}
                   disabled={loading}
                 />
               </div>
@@ -295,12 +297,12 @@ export default function HomePage() {
               <p className={styles.actionHint} role={loading ? 'status' : undefined}>
                 {loading
                   ? 'Processando os arquivos e preparando a conferência. Aguarde…'
-                  : 'Selecione a parceira, a competência e os dois arquivos para comparar.'}
+                  : 'Selecione a parceira, a competência e pelo menos um arquivo para cada lado.'}
               </p>
               <button
                 className={`${styles.compareBtn} btn btn-primary`}
                 onClick={handleCompare}
-                disabled={loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
+                disabled={loading || loadingPeriods || filesA.length === 0 || filesB.length === 0 || !selectedPartnerId || !selectedPeriod}
               >
                 {loading ? (
                   <>
