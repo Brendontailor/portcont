@@ -136,6 +136,7 @@ export function extractClientsFromPdfText(fullText: string): ParseResult {
   const nameBuffers: string[] = [];
   const clientsMap = new Map<string, ParsedClient>();
   let currentRowHasViewLink = false;
+  let currentViewId: string | null = null;
 
   const flushBuffer = () => {
     if (nameBuffers.length > 0) {
@@ -159,7 +160,14 @@ export function extractClientsFromPdfText(fullText: string): ParseResult {
       }
     }
     const line = hasRowIcon ? sourceLine.slice(iconPrefixLength) : sourceLine;
-    if (hasRowIcon || (hasInlineSerial && currentRowHasViewLink && nameBuffers.length > 0)) flushBuffer();
+    if (hasRowIcon) {
+      flushBuffer();
+      currentViewId = null;
+    }
+    const viewId = sourceLine.match(/\/onu\/view\/(\d+)/i)?.[1] ?? null;
+    if (viewId && currentViewId && viewId !== currentViewId) flushBuffer();
+    if (viewId) currentViewId = viewId;
+    if (hasInlineSerial && currentRowHasViewLink && nameBuffers.length > 0) flushBuffer();
     if (hasViewLink) currentRowHasViewLink = true;
     if (!line) continue;
     // SmartOLT emits a connection/status glyph at the beginning of every ONU

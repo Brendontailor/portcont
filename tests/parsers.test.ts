@@ -179,6 +179,19 @@ Visualizar (/onu/view/3) EBERSON BIERCI FERRAZ FHTT04AB6CB8
     expect(result.possiblyIncomplete).toBe(false);
   });
 
+  it('uses each different SmartOLT ONU view ID as a row boundary', () => {
+    const result = extractClientsFromPdfText(`
+1-2 ONUs de 2 exibidas
+Visualizar (/onu/view/100) ANA COSTA
+(/onu/view/100)
+Visualizar (/onu/view/101) MARIA SANTOS
+(/onu/view/101)
+`);
+    expect(result.clients.map(client => client.normalizedName)).toEqual(['ANA COSTA', 'MARIA SANTOS']);
+    expect(result.extractedRecords).toBe(2);
+    expect(result.possiblyIncomplete).toBe(false);
+  });
+
   it('should reject invalid PDF binary with friendly error', async () => {
     const buffer = Buffer.from('isto nao e um pdf valido');
     await expect(parsePDF(buffer, { fileName: 'test.pdf', mimeType: 'application/pdf' }))
