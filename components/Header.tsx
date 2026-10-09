@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { api, type AuthUser } from '@/services/api';
 import styles from './Header.module.css';
@@ -49,7 +50,14 @@ export default function Header() {
     <header className={styles.header} role="banner">
       <div className={styles.container}>
         <Link href="/" className={styles.logo} aria-label="PORTCONT - Página inicial">
-          <span className={styles.logoText}>PORT<span className={styles.logoAccent}>CONT</span></span>
+          <Image
+            src="/images/portcont/logo.png"
+            alt="PORTCONT"
+            className={styles.logoImage}
+            width={120}
+            height={32}
+            priority
+          />
           <span className={styles.logoSubtitle}>Comparação inteligente de clientes</span>
         </Link>
 
