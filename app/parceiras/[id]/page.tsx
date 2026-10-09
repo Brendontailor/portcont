@@ -126,7 +126,11 @@ export default function PartnerDetailPage() {
 
             {partner.periods?.length === 0 ? (
               <div className={styles.empty}>
-                <div className={styles.emptyIcon}>📅</div>
+                <span className={styles.emptyIcon} aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 3.5V6M16 3.5V6M4 9.5h16" />
+                  </svg>
+                </span>
                 <h3>Nenhuma competência cadastrada</h3>
                 <p>Crie a primeira competência para começar a comparar.</p>
                 <button className={styles.newPeriodBtn} onClick={() => setShowCreatePeriod(true)}>

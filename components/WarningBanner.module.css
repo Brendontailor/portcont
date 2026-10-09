@@ -4,31 +4,39 @@
   gap: 10px;
   padding: 12px 14px;
   border-radius: var(--radius-md);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .banner.warning {
   background-color: var(--color-warning-light);
-  border: 1px solid #ffe08a;
+  border: 1px solid #fcd9a3;
   color: var(--color-warning);
 }
 
 .banner.danger {
   background-color: var(--color-danger-light);
-  border: 1px solid #fc8181;
+  border: 1px solid #fecaca;
   color: var(--color-danger);
 }
 
 .banner.info {
   background-color: var(--color-info-light);
-  border: 1px solid #90cdf4;
+  border: 1px solid #bae6fd;
   color: var(--color-info);
 }
 
 .icon {
-  font-size: 18px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   margin-top: 1px;
+}
+
+.icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .content {
@@ -39,15 +47,20 @@
 .label {
   display: block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 2px;
 }
 
 .message {
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.45;
   margin: 0;
+  color: var(--color-text);
 }
+
+.banner.warning .message { color: #92400e; }
+.banner.danger .message { color: #991b1b; }
+.banner.info .message { color: #075985; }
 
 .dismiss {
   display: flex;
@@ -60,12 +73,12 @@
   color: inherit;
   font-size: 13px;
   font-weight: 600;
-  opacity: 0.5;
-  transition: all var(--transition);
+  opacity: 0.55;
+  transition: opacity var(--transition), background-color var(--transition);
   flex-shrink: 0;
 }
 
 .dismiss:hover {
   opacity: 1;
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.06);
 }

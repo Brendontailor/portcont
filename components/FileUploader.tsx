@@ -143,7 +143,7 @@ export default function FileUploader({
             <div className={styles.fileDetails}>
               <div className={styles.fileName}>{file.name}</div>
               <div className={styles.fileMeta}>
-                {file.type} • {(file.size / 1024 / 1024).toFixed(2)} MB
+                {(file.size / 1024 / 1024).toFixed(2)} MB · Arquivo selecionado. Clique para substituir.
               </div>
             </div>
             <button

@@ -49,7 +49,7 @@ export default function Header() {
     <header className={styles.header} role="banner">
       <div className={styles.container}>
         <Link href="/" className={styles.logo} aria-label="PORTCONT - Página inicial">
-          <span className={styles.logoText}>PORTCONT</span>
+          <span className={styles.logoText}>PORT<span className={styles.logoAccent}>CONT</span></span>
           <span className={styles.logoSubtitle}>Comparação inteligente de clientes</span>
         </Link>
 

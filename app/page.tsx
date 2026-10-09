@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import ConferenceReport from '@/components/ConferenceReport';
 import Header from '@/components/Header';
 import FileUploader from '@/components/FileUploader';
@@ -183,22 +182,18 @@ export default function HomePage() {
         <Header />
         <main className={styles.main}>
           <div className={styles.container}>
-            <section className={styles.heroPanel} aria-labelledby="hero-title">
-              <div className={styles.heroCopy}>
-                <span className={styles.heroEyebrow}><span aria-hidden="true" /> CONFERÊNCIA DE CLIENTES</span>
-                <h1 id="hero-title">Compare suas listas com clareza.</h1>
-                <p>Encontre quem está nas duas relações e confira os clientes que aparecem só na sua lista ou só na lista da parceira.</p>
-              </div>
-              <div className={styles.heroArt} aria-hidden="true"><Image src="/images/portcont/portcont-conferencia.svg" alt="" fill priority sizes="(max-width: 800px) 100vw, 45vw" /></div>
-            </section>
+            <header className={styles.pageHeader}>
+              <h1 className={styles.pageTitle}>Nova comparação</h1>
+              <p className={styles.pageSubtitle}>Compare duas listas e identifique divergências entre clientes.</p>
+            </header>
+
+            {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
+            {warnings.map((w, i) => (
+              <WarningBanner key={i} message={w} type="warning" onDismiss={() => setWarnings(prev => prev.filter((_, idx) => idx !== i))} />
+            ))}
 
             <section className={styles.formSection} aria-labelledby="form-title">
-              <h2 id="form-title" className={styles.sectionTitle}>Prepare sua conferência</h2>
-
-              {error && <WarningBanner message={error} type="danger" onDismiss={() => setError(null)} />}
-              {warnings.map((w, i) => (
-                <WarningBanner key={i} message={w} type="warning" onDismiss={() => setWarnings(prev => prev.filter((_, idx) => idx !== i))} />
-              ))}
+              <h2 id="form-title" className={styles.sectionTitle}>Configuração</h2>
 
               <div className={styles.formGrid}>
                 <div className={styles.formGroup}>
@@ -258,6 +253,22 @@ export default function HomePage() {
                 </div>
               </div>
 
+              <div className={styles.titleGroup}>
+                <label htmlFor="title" className={styles.formLabel}>Título da comparação (opcional)</label>
+                <input
+                  id="title"
+                  type="text"
+                  value={comparisonTitle}
+                  onChange={e => setComparisonTitle(e.target.value)}
+                  placeholder="Ex: Comparação inicial, Revisão, Fechamento"
+                  className={styles.formInput}
+                  disabled={loading}
+                />
+              </div>
+            </section>
+
+            <section className={styles.formSection} aria-labelledby="files-title">
+              <h2 id="files-title" className={styles.sectionTitle}>Arquivos</h2>
               <div className={styles.uploadGrid}>
                 <FileUploader
                   label="BASE A"
@@ -278,39 +289,31 @@ export default function HomePage() {
                   disabled={loading}
                 />
               </div>
-
-              <div className={styles.titleActionRow}>
-                <div className={styles.titleInput}>
-                  <label htmlFor="title" className={styles.formLabel}>Título da comparação (opcional)</label>
-                  <input
-                    id="title"
-                    type="text"
-                    value={comparisonTitle}
-                    onChange={e => setComparisonTitle(e.target.value)}
-                    placeholder="Ex: Comparação inicial, Revisão, Fechamento"
-                    className={styles.formInput}
-                    disabled={loading}
-                  />
-                </div>
-
-                <button
-                  className={`${styles.compareBtn} btn btn-primary`}
-                  onClick={handleCompare}
-                  disabled={loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
-                >
-                  {loading ? (
-                    <>
-                      <span className="loading-spinner" />
-                      Processando...
-                    </>
-                  ) : (
-                    'Comparar e abrir relatório'
-                  )}
-                </button>
-              </div>
-
-              {loading && <p role="status">Processando os arquivos e preparando a conferência. Aguarde…</p>}
             </section>
+
+            <div className={styles.actionBar}>
+              <p className={styles.actionHint} role={loading ? 'status' : undefined}>
+                {loading
+                  ? 'Processando os arquivos e preparando a conferência. Aguarde…'
+                  : 'Selecione a parceira, a competência e os dois arquivos para comparar.'}
+              </p>
+              <button
+                className={`${styles.compareBtn} btn btn-primary`}
+                onClick={handleCompare}
+                disabled={loading || loadingPeriods || !fileA || !fileB || !selectedPartnerId || !selectedPeriod}
+              >
+                {loading ? (
+                  <>
+                    <span className="loading-spinner" />
+                    Processando…
+                  </>
+                ) : (
+                  'Comparar arquivos'
+                )}
+              </button>
+            </div>
+
+
           </div>
         </main>
       </div>

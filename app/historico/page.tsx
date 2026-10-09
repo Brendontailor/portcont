@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { api } from '@/services/api';
@@ -66,8 +65,11 @@ export default function HistoricoPage() {
       <main className={styles.main}>
         <div className={styles.container}>
           <header className={styles.header}>
-            <h1 className={styles.title}>Histórico de Comparações</h1>
-            <p className={styles.subtitle}>{total} {total === 1 ? 'comparação encontrada' : 'comparações encontradas'}</p>
+            <div>
+              <h1 className={styles.title}>Histórico de comparações</h1>
+              <p className={styles.subtitle}>{total} {total === 1 ? 'comparação encontrada' : 'comparações encontradas'}</p>
+            </div>
+            <Link href="/" className={styles.newBtn}>Nova comparação</Link>
           </header>
 
           {error && (
@@ -84,18 +86,14 @@ export default function HistoricoPage() {
             </div>
           ) : comparisons.length === 0 ? (
             <div className={styles.empty}>
-              <div className={styles.emptyImage} aria-hidden="true">
-                <Image
-                  src="/images/portcont/portcont-historico-relatorios.png"
-                  alt=""
-                  width={280}
-                  height={200}
-                  className={styles.emptyImageEl}
-                />
-              </div>
+              <span className={styles.emptyIcon} aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 3.5V6M16 3.5V6M4 9.5h16M8 13.5h5M8 16.5h8" />
+                </svg>
+              </span>
               <h2>Nenhuma comparação encontrada</h2>
               <p>As comparações realizadas aparecerão aqui.</p>
-              <Link href="/" className={styles.newBtn}>Nova Comparação</Link>
+              <Link href="/" className={styles.newBtn}>Nova comparação</Link>
             </div>
           ) : (
             <>
@@ -111,7 +109,7 @@ export default function HistoricoPage() {
                       <th scope="col">Arquivo B</th>
                       <th scope="col">Base A</th>
                       <th scope="col">Base B</th>
-                      <th scope="col">Match</th>
+                      <th scope="col">Correspondências</th>
                       <th scope="col">Somente A</th>
                       <th scope="col">Somente B</th>
                       <th scope="col">Revisar</th>
@@ -129,10 +127,10 @@ export default function HistoricoPage() {
                         <td>{comp.fileBName}</td>
                         <td>{comp.totalA.toLocaleString('pt-BR')}</td>
                         <td>{comp.totalB.toLocaleString('pt-BR')}</td>
-                        <td><span className={styles.badgeSuccess}>{comp.matchedCount.toLocaleString('pt-BR')}</span></td>
-                        <td><span className={styles.badgeWarning}>{comp.onlyACount.toLocaleString('pt-BR')}</span></td>
-                        <td><span className={styles.badgeInfo}>{comp.onlyBCount.toLocaleString('pt-BR')}</span></td>
-                        <td><span className={styles.badgeDanger}>{comp.reviewCount.toLocaleString('pt-BR')}</span></td>
+                        <td><span className={`${styles.badge} ${styles.badgeSuccess}`}>{comp.matchedCount.toLocaleString('pt-BR')}</span></td>
+                        <td><span className={`${styles.badge} ${styles.badgeWarning}`}>{comp.onlyACount.toLocaleString('pt-BR')}</span></td>
+                        <td><span className={`${styles.badge} ${styles.badgeInfo}`}>{comp.onlyBCount.toLocaleString('pt-BR')}</span></td>
+                        <td><span className={`${styles.badge} ${styles.badgeDanger}`}>{comp.reviewCount.toLocaleString('pt-BR')}</span></td>
                         <td>
                           <button
                             type="button"

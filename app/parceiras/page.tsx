@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { api } from '@/services/api';
@@ -110,7 +109,10 @@ export default function ParceirasPage() {
       <main className={styles.main}>
         <div className={styles.container}>
           <header className={styles.header}>
-            <h1 className={styles.title}>Parceiras</h1>
+            <div>
+              <h1 className={styles.title}>Parceiras</h1>
+              <p className={styles.subtitle}>Gerencie as parcerias dos provedores e acompanhe suas competências.</p>
+            </div>
             <button className={styles.newBtn} onClick={openCreateModal}>
               + Nova Parceira
             </button>
@@ -125,19 +127,15 @@ export default function ParceirasPage() {
 
           {partners.length === 0 ? (
             <div className={styles.empty}>
-              <div className={styles.emptyImage} aria-hidden="true">
-                <Image
-                  src="/images/portcont/portcont-parceiras-competencia.png"
-                  alt=""
-                  width={280}
-                  height={200}
-                  className={styles.emptyImageEl}
-                />
-              </div>
+              <span className={styles.emptyIcon} aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 20.5h18M5 20.5V8.5l7-4.5 7 4.5v12" /><path d="M9.5 20.5v-6h5v6M8.5 10.5h.01M15.5 10.5h.01" />
+                </svg>
+              </span>
               <h2>Nenhuma parceira cadastrada</h2>
               <p>Crie a primeira parceira para começar a comparar bases.</p>
               <button className={styles.newBtn} onClick={openCreateModal}>
-                + Criar Primeira Parceira
+                + Criar primeira parceira
               </button>
             </div>
           ) : (
@@ -183,7 +181,7 @@ export default function ParceirasPage() {
                             aria-label={`Renomear ${partner.name}`}
                             title="Renomear parceira"
                           >
-                            ✎
+                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17z" /><path d="m13.5 6.5 3 3" /></svg>
                           </button>
                           <button
                             className={styles.iconBtn}
@@ -191,7 +189,9 @@ export default function ParceirasPage() {
                             aria-label={partner.active ? 'Pausar parceira' : 'Ativar parceira'}
                             title={partner.active ? 'Pausar parceira' : 'Ativar parceira'}
                           >
-                            {partner.active ? '⏸' : '▶'}
+                            {partner.active
+                              ? <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 5.5v13M14.5 5.5v13" /></svg>
+                              : <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 5.5v13l11-6.5z" /></svg>}
                           </button>
                           <button
                             className={styles.iconBtn}
@@ -200,7 +200,7 @@ export default function ParceirasPage() {
                             title="Excluir parceira"
                             disabled={!!partner._count?.periods && partner._count.periods > 0}
                           >
-                            🗑
+                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" /></svg>
                           </button>
                         </div>
                       </td>

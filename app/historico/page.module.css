@@ -3,7 +3,7 @@
 }
 
 .main {
-  padding: 24px 0;
+  padding: 28px 0 48px;
 }
 
 .container {
@@ -14,14 +14,19 @@
 }
 
 .header {
-  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .title {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--color-text);
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .subtitle {
@@ -34,25 +39,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  gap: 12px;
+  padding: 12px 16px;
   background-color: var(--color-danger-light);
-  border: 1px solid #fc8181;
+  border: 1px solid #fecaca;
   border-radius: var(--radius-md);
   color: var(--color-danger);
-  margin-bottom: 24px;
+  font-size: 13px;
+  margin-bottom: 20px;
 }
 
 .retryBtn {
-  padding: 8px 16px;
+  padding: 7px 14px;
   background-color: var(--color-danger);
-  color: white;
+  color: #ffffff;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
 }
 
 .retryBtn:hover {
-  background-color: #b02a2a;
+  background-color: #b91c1c;
 }
 
 .loading {
@@ -79,49 +86,52 @@
 }
 
 .emptyIcon {
-  font-size: 64px;
-  margin-bottom: 24px;
-  opacity: 0.4;
-}
-
-.emptyImage {
-  margin-bottom: 24px;
-}
-
-.emptyImageEl {
-  object-fit: contain;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
   border-radius: var(--radius-lg);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.emptyIcon svg {
+  width: 28px;
+  height: 28px;
 }
 
 .empty h2 {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--color-text);
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .empty p {
   font-size: 14px;
   line-height: 1.6;
-  margin: 0 0 24px;
+  margin: 0 0 20px;
 }
 
 .newBtn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  height: 40px;
+  padding: 0 16px;
   background-color: var(--color-primary);
-  color: white;
+  color: #ffffff;
   border-radius: var(--radius-md);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .newBtn:hover {
   background-color: var(--color-primary-hover);
-  color: white;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -130,6 +140,7 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .tableWrapper :global(.table) {
@@ -139,7 +150,7 @@
 
 .tableWrapper :global(.table) th,
 .tableWrapper :global(.table) td {
-  padding: 8px 10px;
+  padding: 10px 12px;
   white-space: nowrap;
 }
 
@@ -151,7 +162,24 @@
 .tableWrapper :global(.table) td:nth-child(6) {
   white-space: normal;
   word-break: break-word;
-  max-width: 180px;
+  max-width: 190px;
+}
+
+.tableWrapper :global(.table) td:nth-child(7),
+.tableWrapper :global(.table) td:nth-child(8) {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.tableWrapper :global(.table) th:nth-child(9),
+.tableWrapper :global(.table) td:nth-child(9),
+.tableWrapper :global(.table) th:nth-child(10),
+.tableWrapper :global(.table) td:nth-child(10),
+.tableWrapper :global(.table) th:nth-child(11),
+.tableWrapper :global(.table) td:nth-child(11),
+.tableWrapper :global(.table) th:nth-child(12),
+.tableWrapper :global(.table) td:nth-child(12) {
+  text-align: center;
 }
 
 .tableWrapper :global(.table) th:last-child,
@@ -159,46 +187,62 @@
   text-align: center;
 }
 
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.badgeSuccess { background-color: var(--color-success-light); color: var(--color-success); }
+.badgeWarning { background-color: var(--color-warning-light); color: var(--color-warning); }
+.badgeInfo { background-color: var(--color-info-light); color: var(--color-info); }
+.badgeDanger { background-color: var(--color-danger-light); color: var(--color-danger); }
+
 .deleteBtn {
   display: inline-grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: #fff;
-  color: #667085;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   transition: color var(--transition), border-color var(--transition), background-color var(--transition);
 }
 
-.deleteBtn svg { width: 17px; height: 17px; }
-.deleteBtn:hover:not(:disabled) { color: var(--color-danger); border-color: #e5b8b8; background: #fff7f7; }
+.deleteBtn svg { width: 16px; height: 16px; }
+.deleteBtn:hover:not(:disabled) { color: var(--color-danger); border-color: #fecaca; background: var(--color-danger-light); }
 .deleteBtn:disabled { opacity: .55; cursor: wait; }
-.deleteBtn:focus-visible { outline: 3px solid rgba(44, 102, 158, .35); outline-offset: 2px; }
+.deleteBtn:focus-visible { outline: 3px solid rgba(29, 78, 216, 0.35); outline-offset: 2px; }
 
 .pagination {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin-top: 24px;
-  padding: 16px;
+  margin-top: 20px;
+  padding: 12px;
 }
 
 .pageBtn {
-  padding: 8px 16px;
+  height: 36px;
+  padding: 0 14px;
   background-color: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
-  transition: all var(--transition);
+  transition: background-color var(--transition), border-color var(--transition);
 }
 
 .pageBtn:hover:not(:disabled) {
-  background-color: var(--color-bg);
-  border-color: var(--color-text-muted);
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .pageBtn:disabled {
@@ -211,17 +255,17 @@
   color: var(--color-text-muted);
 }
 
-.badgeSuccess { background-color: var(--color-success-light); color: var(--color-success); }
-.badgeWarning { background-color: var(--color-warning-light); color: var(--color-warning); }
-.badgeInfo { background-color: var(--color-info-light); color: var(--color-info); }
-.badgeDanger { background-color: var(--color-danger-light); color: var(--color-danger); }
-
 @media (max-width: 768px) {
   .container {
     padding: 0 16px;
   }
 
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .title {
-    font-size: 24px;
+    font-size: 22px;
   }
 }
